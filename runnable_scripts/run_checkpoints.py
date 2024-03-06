@@ -60,6 +60,13 @@ args = parser.parse_args()
 args.simpointdir = os.path.abspath(args.simpointdir)
 args.minispecdir = os.path.abspath(args.minispecdir)
 
+# #Delete simpoints if requested
+# if args.clean:
+#     os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/simpoints.simpts"')
+#     os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/simpoints.weights"')
+#     os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/simpoints.log"')
+#     sys.exit()
+
 #Construct list of commands to be executed in parallel
 commands = []
 sppaths = glob.glob(args.simpointdir + "/**/simpoints.simpts", recursive=True)
@@ -73,6 +80,10 @@ for sppath in sppaths:
 
     benchexepath = [x for x in benchexepaths if spname in x][0]
 
+    #Skip generating clusters for this item if already generated
+    if os.path.exists(spdir + '/simpoints.simpts'):
+        pass
+
     benchopts = ' '.join(workloads[spname].args[spidx])
     if workloads[spname].std_inputs is not None:
         benchinfile = workloads[spname].std_inputs[spidx]
@@ -82,19 +93,19 @@ for sppath in sppaths:
     benchexename = spname.split('.')[1] 
     benchexepath = f'{args.minispecdir}/{spname}/{benchexename}_base.mytest-m64'
 
-    if not os.path.exists(f'{spdir}/checkpoints'):
-        os.makedirs(f'{spdir}/checkpoints')
-    
     command = []
-    command.extend([f'{args.gem5dir}/build/X86/gem5.opt', f'--outdir={spdir}/checkpoints', f'{args.gem5dir}/configs/deprecated/example/se.py',
-                    '--cpu-type=X86KvmCPU',
-                    f'--take-simpoint-checkpoint={spdir}/simpoints.simpts,{spdir}/simpoints.weights,{args.interval},{args.warmup}',
+    command.extend([f'{args.gem5dir}/build/X86/gem5.opt', f'--outdir={spdir}', f'{args.gem5dir}/configs/deprecated/example/se.py',
+                    '--restore-simpoint-checkpoint',
+                    '--restore-with-cpu=X86KvmCPU'
+                    '--cpu-type=X86O3CPU',
+                    '--checkpoint-restore', f'{checkpointidx}',
+                    '--checkpoint-dir', f'',
                     '-c', f'{benchexepath}',
                     f'--options="{benchopts}"',
                     '--output', f'{spdir}/checkpoints.log',
                     '--errout', f'{spdir}/checkpoints.log',
                     f'--mem-size={args.memsize}GB'])
-    
+
     if benchinfile is not None:
         command.extend(['--input', benchinfile])
     
@@ -111,10 +122,6 @@ def run_command(command_tuple):
         process = subprocess.Popen(command,) # stdout=, stderr=log
         (output, err) = process.communicate()  
         p_status = process.wait()
-    
-
-    with open(spdir + "/checkpoints.done", 'w+') as statusf:
-        statusf.write(str(p_status))
     
     print(f"Finished {spdir} with exit code {p_status}")
         
