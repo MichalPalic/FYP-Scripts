@@ -71,6 +71,13 @@ for sppath in sppaths:
     spname = sppath.split('/')[-3]
     spidx = int(sppath.split('/')[-2])
 
+    #Skip generating clusters for this item if already successfully generated
+    if os.path.exists(spdir + '/checkpoints.done'):
+        with open(spdir + '/checkpoints.done', 'r') as exitcode:
+            if int(exitcode.read()) == 0:
+                print(f'Skipped {spdir}')
+                pass
+
     benchexepath = [x for x in benchexepaths if spname in x][0]
 
     benchopts = ' '.join(workloads[spname].args[spidx])

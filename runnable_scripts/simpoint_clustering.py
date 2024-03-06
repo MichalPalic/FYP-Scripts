@@ -62,9 +62,12 @@ bbvpaths = glob.glob(args.workdir + "/**/bb.txt", recursive=True)
 for bbvpath in bbvpaths:
     bbvdir ='/'.join(bbvpath.split('/')[:-1])
 
-    #Skip generating clusters for this item if already generated
+    #Skip generating clusters for this item if already successfully generated
     if os.path.exists(bbvdir + '/simpoints.done'):
-        pass
+        with open(bbvdir + '/simpoints.done', 'r') as exitcode:
+            if int(exitcode.read()) == 0:
+                print(f'Skipped {bbvdir}')
+                pass
 
     command = []
     command.extend([args.simpointbin, '-maxK', f'{args.maxcluster}',

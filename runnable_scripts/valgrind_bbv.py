@@ -74,10 +74,12 @@ for folder in folders:
         if not os.path.exists(outdir):
             os.makedirs(outdir)
 
-        #Skip generating bbv for this item if already generated
+        #Skip generating bbv for this item if already generated with zero exit code
         if os.path.exists(outdir + '/bb.done'):
-            print(f'Skipped {outdir}')
-            pass
+            with open(outdir + "/bb.done", 'r') as exitcode:
+                if int(exitcode.read()) == 0:
+                    print(f'Skipped {outdir}')
+                    pass
 
         #Construct executable path according to weird SPEC semi-convention
         programname = folder.split('.')[1]
