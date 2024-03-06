@@ -28,6 +28,9 @@ benchmarks = {
     "bwaves" : "603.bwaves_s",
     "cactuBSSN" : "607.cactuBSSN_s",
     "lbm" : "619.lbm_s",
+    "wrf" : "621.wrf_s",
+    "cam4" : "627.cam4_s",
+    "pop2" : "628.pop2_s",
     "imagick" : "638.imagick_s",
     "nab" : "644.nab_s",
     "fotonik3d" : "649.fotonik3d_s",
@@ -100,6 +103,12 @@ workloads["607.cactuBSSN_s"] = spec_workload("607.cactuBSSN_s", args)
 
 args = [["2000", "reference.dat", "0", "0", "200_200_260_ldc.of"]]
 workloads["619.lbm_s"] = spec_workload("619.lbm_s", args)
+
+workloads["621.wrf_s"] = spec_workload("621.wrf_s", [[]])
+
+workloads["627.cam4_s"] = spec_workload("627.cam4_s", [[]])
+
+workloads["628.pop2_s"] = spec_workload("628.pop2_s", [[]])
 
 args = [
     ["-limit", "disk", "0", "refspeed_input.tga", "-resize", "817%", "-rotate",
