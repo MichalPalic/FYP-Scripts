@@ -59,9 +59,9 @@ workloads["623.xalancbmk_s"] = spec_workload("623.xalancbmk_s", [["-v", "t5.xml"
 
 args = [
     ["--pass", "1", "--stats", "x264_stats.log", "--bitrate", "1000", 
-        "--frames", "1000", "-o", "BuckBunny_New.264 BuckBunny.yuv", "1280x720"],
+        "--frames", "1000", "-o", "BuckBunny_New.264", "BuckBunny.yuv", "1280x720"],
     ["--pass", "2", "--stats", "x264_stats.log", "--bitrate", "1000",
-        "--dumpyuv", "200", "--frames", "1000", "-o", "BuckBunny_New.264 BuckBunny.yuv", "1280x720"],
+        "--dumpyuv", "200", "--frames", "1000", "-o", "BuckBunny_New.264", "BuckBunny.yuv", "1280x720"],
     ["--seek", "500", "--dumpyuv", "200", "--frames", "1250", "-o", "BuckBunny_New.264", "BuckBunny.yuv", "1280x720"]
 ]
 workloads["625.x264_s"] = spec_workload("625.x264_s", args)
