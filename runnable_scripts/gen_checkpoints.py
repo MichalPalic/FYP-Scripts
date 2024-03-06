@@ -7,7 +7,7 @@ import multiprocessing
 import subprocess
 
 #Some setup
-#sudo tee /proc/sys/kernel/perf_event_paranoid
+#echo "-1" | sudo tee /proc/sys/kernel/perf_event_paranoid
 #https://www.gem5.org/documentation/general_docs/using_kvm/
 
 parser = argparse.ArgumentParser(
@@ -66,6 +66,7 @@ commands = []
 sppaths = glob.glob(args.simpointdir + "/**/simpoints.simpts", recursive=True)
 benchexepaths = glob.glob(args.minispecdir + "/**/*.mytest-m64", recursive=True)
 
+#Emit command for each simpoint path
 for sppath in sppaths:
     spdir ='/'.join(sppath.split('/')[:-1])
     spname = sppath.split('/')[-3]
@@ -114,7 +115,7 @@ def run_command(command_tuple):
     
     print(f"Finished {spdir} with exit code {p_status}")
         
-#Execute commands in parallel
+#Execute commands in parallel with pool
 pool = multiprocessing.Pool(args.nthreads)
 
 with pool:
