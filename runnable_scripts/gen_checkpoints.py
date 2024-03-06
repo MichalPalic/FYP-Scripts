@@ -101,7 +101,7 @@ for sppath in sppaths:
                     f'--options="{benchopts}"',
                     '--output', f'{spdir}/checkpoints.log',
                     '--errout', f'{spdir}/checkpoints.log',
-                    '--memsize', f'{args.memsize}'])
+                    '--mem-size', f'{args.memsize}'])
     
     if benchinfile is not None:
         command.extend(['--input', benchinfile])
