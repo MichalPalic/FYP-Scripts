@@ -43,6 +43,12 @@ parser.add_argument('-n', '--nthreads',
                 default=2,
                 help='Number of jobs to run in parallel')
 
+
+parser.add_argument('-m', '--memsize',
+                type=int,
+                default=8,
+                help='Maximum memory size')
+
 parser.add_argument('--clean',
                 action='store_true',
                 default=False,
@@ -94,7 +100,8 @@ for sppath in sppaths:
                     '-c', f'{benchexepath}',
                     f'--options="{benchopts}"',
                     '--output', f'{spdir}/checkpoints.log',
-                    '--errout', f'{spdir}/checkpoints.log',])
+                    '--errout', f'{spdir}/checkpoints.log',
+                    '--memsize', f'{args.memsize}'])
     
     if benchinfile is not None:
         command.extend(['--input', benchinfile])
