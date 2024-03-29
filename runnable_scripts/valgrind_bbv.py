@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from workloads import *
+from workload_spec_rate import *
 import multiprocessing
 import subprocess
 
@@ -17,17 +17,17 @@ parser.add_argument('--interval',
 
 parser.add_argument('--minispec',
                 type=str,
-                default="/home/michal/Desktop/MINISPEC2017",
+                default="/home/michal/Desktop/spec_2017_rate_executables",
                 help='Path to compiled "Mini"SPEC (Extracted executables and input files)')
 
 parser.add_argument('--outpath',
                 type=str,
-                default="/home/michal/Desktop/SPEC2017SIM",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints",
                 help='Output path for saving bbvectors')
 
 parser.add_argument('-n', '--nthreads',
                 type=int,
-                default=16,
+                default=64,
                 help='Number of jobs to run in parallel')
 
 parser.add_argument('--clean',
@@ -98,7 +98,7 @@ for folder in folders:
 def run_command(command_tuple):
     programdir, outdir, inpath, command = command_tuple
 
-    print(f"Running {programdir}")
+    print(f"Running {outdir}")
 
     os.chdir(programdir)
     with open(outdir + "/bb.log", 'w+') as log:
@@ -116,7 +116,7 @@ def run_command(command_tuple):
     with open(outdir + "/bb.done", 'w+') as statusf:
         statusf.write(str(p_status))
 
-    print(f"Finished {programdir} with exit code {p_status}")
+    print(f"Finished {outdir} with exit code {p_status}")
 
         
 #Execute commands in parallel

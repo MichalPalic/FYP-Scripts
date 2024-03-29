@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 import glob
-from workloads import *
+from workload_spec_rate import *
 import multiprocessing
 import subprocess
 
@@ -30,12 +30,12 @@ parser.add_argument('--gem5dir',
 
 parser.add_argument('--simpointdir',
                 type=str,
-                default="/home/michal/Desktop/SPEC2017SIM",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints",
                 help='Path to input/output directory)')
 
 parser.add_argument('--minispecdir',
                 type=str,
-                default="/home/michal/Desktop/MINISPEC2017",
+                default="/home/michal/Desktop/spec_2017_rate_executables",
                 help='Path to minispec directory)')
 
 parser.add_argument('-n', '--nthreads',
