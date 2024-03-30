@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 import glob
-from workload_spec_rate import *
+from workload_spec import *
 import multiprocessing
 import subprocess
 
