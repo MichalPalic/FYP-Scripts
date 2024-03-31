@@ -62,7 +62,7 @@ args.minispecdir = os.path.abspath(args.minispecdir)
 
 #Construct list of commands to be executed in parallel
 commands = []
-sppaths = glob.glob(args.simpointdir + "/**/simpoints.simpts", recursive=True)
+sppaths = glob.glob(args.simpointdir + "/**/simpoints.done", recursive=True)
 benchexepaths = glob.glob(args.minispecdir + "/**/*.mytest-m64", recursive=True)
 
 #Emit command for each simpoint path

@@ -57,7 +57,7 @@ if args.clean:
 
 #Construct list of commands to be executed in parallel
 commands = []
-bbvpaths = glob.glob(args.workdir + "/**/bb.txt", recursive=True)
+bbvpaths = glob.glob(args.workdir + "/**/bb.done", recursive=True)
 
 for bbvpath in bbvpaths:
     bbvdir ='/'.join(bbvpath.split('/')[:-1])
