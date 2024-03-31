@@ -65,9 +65,17 @@ for bbvpath in bbvpaths:
     #Skip generating clusters for this item if already successfully generated
     if os.path.exists(bbvdir + '/simpoints.done'):
         with open(bbvdir + '/simpoints.done', 'r') as exitcode:
-            if int(exitcode.read()) == 0:
-                print(f'Skipped {bbvdir}')
+            if int(exitcode.read().strip()) == 0:
+                print(f'Skipped {bbvdir} (simpoints.done exists with 0 exit code)')
                 pass
+
+    #Skip generating clusters if bb generation failed
+    with open(bbvdir + '/bb.done', 'r') as exitcode:
+        if int(exitcode.read().strip()) != 0:
+            print(f'Skipped {bbvdir} (bb.done with non-zero exit code)')
+            pass
+    
+
 
     command = []
     command.extend([args.simpointbin, '-maxK', f'{args.maxcluster}',
