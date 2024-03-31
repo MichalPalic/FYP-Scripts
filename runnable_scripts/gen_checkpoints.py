@@ -107,8 +107,8 @@ for sppath in sppaths:
                     f'--take-simpoint-checkpoint={spdir}/simpoints.simpts,{spdir}/simpoints.weights,{args.interval},{args.warmup}',
                     '-c', f'{benchexepath}',
                     f'--options="{benchopts}"',
-                    '--output', f'{spdir}/checkpoints.log',
-                    '--errout', f'{spdir}/checkpoints.log',
+                    '--output', f'{spdir}/checkpoints.stdout',
+                    '--errout', f'{spdir}/checkpoints.stderr',
                     f'--mem-size={args.memsize}GB'])
     
     if benchinfile is not None:
@@ -124,7 +124,7 @@ def run_command(command_tuple):
 
     with open(spdir + "/checkpoints.log", 'w+') as log:
         log.write(' '.join(command))
-        process = subprocess.Popen(command,) # stdout=, stderr=log
+        process = subprocess.Popen(command, stdout=log, stderr=log)
         (output, err) = process.communicate()  
         p_status = process.wait()
     
