@@ -67,16 +67,14 @@ for bbvpath in bbvpaths:
         with open(bbvdir + '/simpoints.done', 'r') as exitcode:
             if int(exitcode.read().strip()) == 0:
                 print(f'Skipped {bbvdir} (simpoints.done exists with 0 exit code)')
-                pass
+                continue
 
     #Skip generating clusters if bb generation failed
     with open(bbvdir + '/bb.done', 'r') as exitcode:
         if int(exitcode.read().strip()) != 0:
             print(f'Skipped {bbvdir} (bb.done with non-zero exit code)')
-            pass
+            continue
     
-
-
     command = []
     command.extend([args.simpointbin, '-maxK', f'{args.maxcluster}',
                     '-numInitSeeds', '1', '-loadFVFile', f'{bbvdir}/bb.txt',

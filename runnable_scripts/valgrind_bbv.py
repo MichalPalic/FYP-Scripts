@@ -79,7 +79,7 @@ for folder in folders:
             with open(outdir + "/bb.done", 'r') as exitcode:
                 if int(exitcode.read()) == 0:
                     print(f'Skipped {outdir}')
-                    pass
+                    continue
 
         #Construct executable path according to weird SPEC semi-convention
         programname = folder.split('.')[1]

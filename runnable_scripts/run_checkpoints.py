@@ -82,7 +82,7 @@ for sppath in sppaths:
 
     #Skip generating clusters for this item if already generated
     if os.path.exists(spdir + '/simpoints.simpts'):
-        pass
+        continue
 
     benchopts = ' '.join(workloads[spname].args[spidx])
     if workloads[spname].std_inputs is not None:

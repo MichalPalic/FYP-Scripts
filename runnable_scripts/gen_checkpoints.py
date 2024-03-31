@@ -62,7 +62,7 @@ args.minispecdir = os.path.abspath(args.minispecdir)
 
 #Construct list of commands to be executed in parallel
 commands = []
-sppaths = glob.glob(args.simpointdir + "/**/simpoints.simpts", recursive=True)
+sppaths = glob.glob(args.simpointdir + "/**/simpoints.done", recursive=True)
 benchexepaths = glob.glob(args.minispecdir + "/**/*.mytest-m64", recursive=True)
 
 #Emit command for each simpoint path
@@ -76,13 +76,13 @@ for sppath in sppaths:
         with open(spdir + '/checkpoints.done', 'r') as exitcode:
             if int(exitcode.read().strip()) == 0:
                 print(f'Skipped {spdir} (Checkpoints.done with code 0)')
-                pass
+                continue
     
     if os.path.exists(spdir + '/simpoints.done'):
         with open(spdir + '/simpoints.done', 'r') as exitcode:
             if int(exitcode.read().strip()) != 0:
                 print(f'Skipped {spdir} (simpoint.done with non-zero exit code)')
-                pass
+                continue
     else:
         print(f'Skipped {spdir} (simpoint.done doesnt exist)')
         pass
