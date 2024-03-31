@@ -79,7 +79,7 @@ for bbvpath in bbvpaths:
 
     command = []
     command.extend([args.simpointbin, '-maxK', f'{args.maxcluster}',
-                    '-numInitSeeds', '1', '-loadFVFile', bbvpath,
+                    '-numInitSeeds', '1', '-loadFVFile', f'{bbvdir}/bb.txt',
                     '-saveSimpoints', f'{bbvdir}/simpoints.simpts',
                     '-saveSimpointWeights', f'{bbvdir}/simpoints.weights'])
     
