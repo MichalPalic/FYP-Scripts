@@ -102,7 +102,7 @@ workloads["557.xz_r"] = spec_workload("557.xz_r", args)
 
 #Floating point benchmarks
 args = [["bwaves_1"], ["bwaves_2"], ["bwaves_3"], ["bwaves_4"]]
-infiles = [["bwaves_1.in"],["bwaves_2.in"], ["bwaves_3.in"],["bwaves_4.in"]]
+infiles = ["bwaves_1.in","bwaves_2.in", "bwaves_3.in","bwaves_4.in"]
 workloads["503.bwaves_r"] = spec_workload("503.bwaves_r", args, infiles)
 
 args = [
@@ -142,7 +142,7 @@ workloads["544.nab_r"] = spec_workload("544.nab_r", [["1am0", "1122214447", "122
 
 workloads["549.fotonik3d_r"] = spec_workload("549.fotonik3d_r", [[]])
 
-workloads["554.roms_r"] = spec_workload("554.roms_r", [[]], ["ocean_benchmark2.in"])
+workloads["554.roms_r"] = spec_workload("554.roms_r", [[]], ["ocean_benchmark2.in.x"])
 
 
 #Spec speed
