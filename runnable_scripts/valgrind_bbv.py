@@ -92,7 +92,12 @@ for folder in folders:
                         f'--bb-out-file={outdir}/bb.txt', f'{programpath}' ])
         command.extend(benchmark_args)
 
-        commands.append((programdir, outdir, benchmark.std_inputs[idx], command))
+        if benchmark.std_inputs is not None:
+            stdin_path = benchmark.std_inputs[idx]
+        else:
+            stdin_path = None
+
+        commands.append((programdir, outdir, stdin_path, command))
 
 #Function for single blocking program call
 def run_command(command_tuple):

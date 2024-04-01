@@ -90,6 +90,7 @@ for sppath in sppaths:
     benchexepath = [x for x in benchexepaths if spname in x][0]
 
     benchopts = ' '.join(workloads[spname].args[spidx])
+    
     if workloads[spname].std_inputs is not None:
         benchinfile = workloads[spname].std_inputs[spidx]
     else:
