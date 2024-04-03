@@ -61,12 +61,12 @@ args.simpointdir = os.path.abspath(args.simpointdir)
 args.minispecdir = os.path.abspath(args.minispecdir)
 
 if args.clean:
-    print (f'rm {args.outpath}/**/bb.log')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.outpath}/**/checkpoints"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.done"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.log"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.stdout"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.stderr"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.simpointdir}/**/checkpoints"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.done"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.log"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.stdout"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.stderr"')
+    print (f'Checkpoints cleaned')
     sys.exit()
 
 #Construct list of commands to be executed in parallel
