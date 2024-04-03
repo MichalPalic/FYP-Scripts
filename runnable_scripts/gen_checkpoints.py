@@ -6,7 +6,7 @@ from workload_spec import *
 import multiprocessing
 import subprocess
 
-#Some setup
+#If you're getting -6 exit codes, you need to do some system side setup!
 #echo "-1" | sudo tee /proc/sys/kernel/perf_event_paranoid
 #https://www.gem5.org/documentation/general_docs/using_kvm/
 
