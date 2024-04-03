@@ -60,6 +60,15 @@ args = parser.parse_args()
 args.simpointdir = os.path.abspath(args.simpointdir)
 args.minispecdir = os.path.abspath(args.minispecdir)
 
+if args.clean:
+    print (f'rm {args.outpath}/**/bb.log')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.outpath}/**/checkpoints"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.done"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.log"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.stdout"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/checkpoints.stderr"')
+    sys.exit()
+
 #Construct list of commands to be executed in parallel
 commands = []
 sppaths = glob.glob(args.simpointdir + "/**/simpoints.done", recursive=True)
@@ -108,8 +117,6 @@ for sppath in sppaths:
                     f'--take-simpoint-checkpoint={spdir}/simpoints.simpts,{spdir}/simpoints.weights,{args.interval},{args.warmup}',
                     '-c', f'{benchexepath}',
                     f'--options="{benchopts}"',
-                    '--output', f'{spdir}/checkpoints.stdout',
-                    '--errout', f'{spdir}/checkpoints.stderr',
                     f'--mem-size={args.memsize}GB'])
     
     if benchinfile is not None:
