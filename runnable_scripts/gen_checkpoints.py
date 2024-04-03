@@ -90,7 +90,7 @@ for sppath in sppaths:
     benchexepath = [x for x in benchexepaths if spname in x][0]
 
     benchopts = ' '.join(workloads[spname].args[spidx])
-    
+
     if workloads[spname].std_inputs is not None:
         benchinfile = workloads[spname].std_inputs[spidx]
     else:
@@ -103,7 +103,7 @@ for sppath in sppaths:
         os.makedirs(f'{spdir}/checkpoints')
     
     command = []
-    command.extend([f'{args.gem5dir}/build/X86/gem5.opt', f'--outdir={spdir}/checkpoints', f'{args.gem5dir}/configs/deprecated/example/se.py',
+    command.extend([f'{args.gem5dir}/build/X86/gem5.opt', f'--outdir={spdir}/checkpoints', f'{args.gem5dir}/configs/example/se.py',
                     '--cpu-type=X86KvmCPU',
                     f'--take-simpoint-checkpoint={spdir}/simpoints.simpts,{spdir}/simpoints.weights,{args.interval},{args.warmup}',
                     '-c', f'{benchexepath}',
@@ -113,7 +113,7 @@ for sppath in sppaths:
                     f'--mem-size={args.memsize}GB'])
     
     if benchinfile is not None:
-        command.extend(['--input', benchinfile])
+        command.extend(['--input', f'{args.minispecdir}/{spname}/{benchinfile}'])
     
     commands.append((spdir, command))
 

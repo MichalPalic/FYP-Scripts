@@ -78,7 +78,7 @@ for folder in folders:
         if os.path.exists(outdir + '/bb.done'):
             with open(outdir + "/bb.done", 'r') as exitcode:
                 if int(exitcode.read()) == 0:
-                    print(f'Skipped {outdir}')
+                    print(f'Skipped {outdir} (bb.done with zero exit code)')
                     continue
 
         #Construct executable path according to weird SPEC semi-convention
