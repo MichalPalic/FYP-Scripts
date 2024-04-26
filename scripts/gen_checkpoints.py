@@ -30,12 +30,12 @@ parser.add_argument('--gem5dir',
 
 parser.add_argument('--workdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10",
                 help='Path to input/output directory')
 
-parser.add_argument('--minispecdir',
+parser.add_argument('--specexe',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_executables",
+                default="/home/michal/Desktop/spec_2017_rate_executables_gcc_10",
                 help='Path to minispec directory)')
 
 parser.add_argument('-n', '--nthreads',
@@ -58,7 +58,7 @@ args = parser.parse_args()
 
 #Ensure absolute paths
 args.workdir = os.path.abspath(args.workdir)
-args.minispecdir = os.path.abspath(args.minispecdir)
+args.specexe = os.path.abspath(args.specexe)
 
 if args.clean:
     os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.workdir}/**/checkpoints"')
@@ -72,7 +72,7 @@ if args.clean:
 #Construct list of commands to be executed in parallel
 commands = []
 sppaths = glob.glob(args.workdir + "/**/simpoints.done", recursive=True)
-benchexepaths = glob.glob(args.minispecdir + "/**/*.mytest-m64", recursive=True)
+benchexepaths = glob.glob(args.specexe + "/**/*.mytest-m64", recursive=True)
 
 #Emit command for each simpoint path
 for sppath in sppaths:
@@ -106,7 +106,7 @@ for sppath in sppaths:
         benchinfile = None
 
     benchexename = spname.split('.')[1] 
-    benchexepath = f'{args.minispecdir}/{spname}/{benchexename}_base.mytest-m64'
+    benchexepath = f'{args.specexe}/{spname}/{benchexename}_base.mytest-m64'
 
     if not os.path.exists(f'{spdir}/checkpoints'):
         os.makedirs(f'{spdir}/checkpoints')
@@ -120,7 +120,7 @@ for sppath in sppaths:
                     f'--mem-size={args.memsize}GB'])
     
     if benchinfile is not None:
-        command.extend(['--input', f'{args.minispecdir}/{spname}/{benchinfile}'])
+        command.extend(['--input', f'{args.specexe}/{spname}/{benchinfile}'])
     
     commands.append((spdir, command))
 

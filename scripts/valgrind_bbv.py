@@ -17,12 +17,12 @@ parser.add_argument('--interval',
 
 parser.add_argument('--specexe',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_executables",
+                default="/home/michal/Desktop/spec_2017_rate_executables_gcc_10",
                 help='Path to structured compiled extracted executables and input files')
 
 parser.add_argument('--workdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10",
                 help='Output path for saving bbvectors')
 
 parser.add_argument('-n', '--nthreads',
