@@ -15,12 +15,12 @@ parser.add_argument('--interval',
                 default=10**7,
                 help='Set simpoints interval duration in instructions')
 
-parser.add_argument('--minispec',
+parser.add_argument('--specexe',
                 type=str,
                 default="/home/michal/Desktop/spec_2017_rate_executables",
-                help='Path to compiled "Mini"SPEC (Extracted executables and input files)')
+                help='Path to structured compiled extracted executables and input files')
 
-parser.add_argument('--outpath',
+parser.add_argument('--workdir',
                 type=str,
                 default="/home/michal/Desktop/spec_2017_rate_checkpoints",
                 help='Output path for saving bbvectors')
@@ -38,27 +38,27 @@ parser.add_argument('--clean',
 args = parser.parse_args()
 
 #Additional input validation
-if not os.path.exists(args.minispec):
-    print("Minispec path does not exist")
+if not os.path.exists(args.specexe):
+    print("Specexe path does not exist")
     sys.exit()
 
-if not os.path.isdir(args.minispec):
-    print("Minispec not a directory")
+if not os.path.isdir(args.specexe):
+    print("Specexe not a directory")
     sys.exit()
 
-args.minispec = os.path.abspath(args.minispec)
-args.outpath = os.path.abspath(args.outpath)
+args.specexe = os.path.abspath(args.specexe)
+args.workdir = os.path.abspath(args.workdir)
 
 if args.clean:
-    print (f'rm {args.outpath}/**/bb.log')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/bb.log"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/bb.txt"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.outpath}/**/bb.done"')
+    print (f'rm {args.workdir}/**/bb.log')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/bb.log"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/bb.txt"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/bb.done"')
     sys.exit()
 
-#Read benchmarks in minispec folder
-entries = os.listdir(args.minispec)
-folders = [folder for folder in entries if os.path.isdir(args.minispec+ '/' + folder)]
+#Read benchmarks in specexe folder
+entries = os.listdir(args.specexe)
+folders = [folder for folder in entries if os.path.isdir(args.specexe+ '/' + folder)]
 
 #Construct list of commands to be executed in parallel
 commands = []
@@ -69,7 +69,7 @@ for folder in folders:
         command = []
 
         #Create missing output directory 
-        outdir = args.outpath + '/' + folder + f'/{idx}'
+        outdir = args.workdir + '/' + folder + f'/{idx}'
 
         if not os.path.exists(outdir):
             os.makedirs(outdir)
@@ -83,7 +83,7 @@ for folder in folders:
 
         #Construct executable path according to weird SPEC semi-convention
         programname = folder.split('.')[1]
-        programdir = args.minispec + '/' + folder
+        programdir = args.specexe + '/' + folder
         programpath = programdir + '/' + programname + '_base.mytest-m64'
 
         assert os.path.isfile(programpath), f"Failed to infer executable path: {programpath}"

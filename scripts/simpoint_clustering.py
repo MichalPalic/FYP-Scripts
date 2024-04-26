@@ -19,7 +19,7 @@ parser.add_argument('--interval',
 parser.add_argument('--workdir',
                 type=str,
                 default="/home/michal/Desktop/spec_2017_rate_checkpoints",
-                help='Path to input/output directory)')
+                help='Path to input/output directory')
 
 parser.add_argument('--simpointbin',
                 type=str,

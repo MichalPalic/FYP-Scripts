@@ -28,10 +28,10 @@ parser.add_argument('--gem5dir',
                 default="/home/michal/Desktop/gem5_michal",
                 help='Path gem5 directory')
 
-parser.add_argument('--simpointdir',
+parser.add_argument('--workdir',
                 type=str,
                 default="/home/michal/Desktop/spec_2017_rate_checkpoints",
-                help='Path to input/output directory)')
+                help='Path to input/output directory')
 
 parser.add_argument('--minispecdir',
                 type=str,
@@ -57,21 +57,21 @@ parser.add_argument('--clean',
 args = parser.parse_args()
 
 #Ensure absolute paths
-args.simpointdir = os.path.abspath(args.simpointdir)
+args.workdir = os.path.abspath(args.workdir)
 args.minispecdir = os.path.abspath(args.minispecdir)
 
 if args.clean:
-    os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.simpointdir}/**/checkpoints"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.done"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.log"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.stdout"')
-    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.simpointdir}/**/checkpoints.stderr"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.workdir}/**/checkpoints"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/checkpoints.done"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/checkpoints.log"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/checkpoints.stdout"')
+    os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/checkpoints.stderr"')
     print (f'Checkpoints cleaned')
     sys.exit()
 
 #Construct list of commands to be executed in parallel
 commands = []
-sppaths = glob.glob(args.simpointdir + "/**/simpoints.done", recursive=True)
+sppaths = glob.glob(args.workdir + "/**/simpoints.done", recursive=True)
 benchexepaths = glob.glob(args.minispecdir + "/**/*.mytest-m64", recursive=True)
 
 #Emit command for each simpoint path
