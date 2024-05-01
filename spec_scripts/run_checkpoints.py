@@ -30,7 +30,7 @@ parser.add_argument('--gem5dir',
 
 parser.add_argument('--simpointdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_11",
                 help='Path to input/output directory)')
 
 parser.add_argument('--minispecdir',
@@ -53,6 +53,11 @@ parser.add_argument('--clean',
                 action='store_true',
                 default=False,
                 help='Clean existing ')
+
+parser.add_argument('--debug',
+                action='store_true',
+                default=False,
+                help='Use gem5 .debug build instead of .opt')
 
 args = parser.parse_args()
 
@@ -94,7 +99,9 @@ for sppath in sppaths:
     benchexepath = f'{args.minispecdir}/{spname}/{benchexename}_base.mytest-m64'
 
     command = []
-    command.extend([f'{args.gem5dir}/build/X86/gem5.opt', f'--outdir={spdir}', f'{args.gem5dir}/configs/deprecated/example/se.py',
+    command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
+                    else '.opt'), f'--outdir={spdir}',
+                    f'{args.gem5dir}/configs/deprecated/example/se.py',
                     '--restore-simpoint-checkpoint',
                     '--restore-with-cpu=X86KvmCPU'
                     '--cpu-type=X86O3CPU',

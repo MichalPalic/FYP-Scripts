@@ -1,3 +1,6 @@
+#Example command run for tracer
+#python3 coremarkpro_scripts/run_coremarkpro.py --gen_trace --resultdir /home/michal/Desktop/coremarkpro_trace_gcc_10 --gem5dir /home/michal/Desktop/gem5_oracle_tracer -j 1 --debug
+
 import argparse
 import os
 import sys
@@ -31,6 +34,26 @@ parser.add_argument('-j', '--jobs',
                 default=multiprocessing.cpu_count(),
                 help='Number of jobs to run in parallel')
 
+parser.add_argument('--gen_trace',
+                action='store_true',
+                default=False,
+                help='Generate oracle trace')
+
+parser.add_argument('--run_trace',
+                action='store_true',
+                default=False,
+                help='Use trace to run workload with oracle')
+
+parser.add_argument('--trace_dir',
+                type=str,
+                default="/home/michal/Desktop/coremarkpro_trace_gcc_10",
+                help='Directory containing/to to contain trace')
+
+parser.add_argument('--debug',
+                action='store_true',
+                default=False,
+                help='Use gem5 .debug build instead of .opt')
+
 parser.add_argument('-c', '--clean',
                 action='store_true',
                 default=False,
@@ -42,8 +65,8 @@ args = parser.parse_args()
 args.gem5dir = os.path.abspath(args.gem5dir)
 
 if args.clean:
-    os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.resultdir}/**/checkpoints"')
-    print (f'Cleaned result dir')
+    # os.system(f'/bin/bash -c "shopt -s globstar; rm -rf {args.resultdir}/**/checkpoints"')
+    # print (f'Cleaned result dir')
     sys.exit()
 
 #Construct list of commands to be executed in parallel
@@ -67,24 +90,38 @@ for workload_name in workloads:
     benchopts = ' '.join(workloads[workload_name].args[0])
     
     command = []
-    command.extend([f'{args.gem5dir}/build/X86/gem5.debug', f'--outdir={result_dir}', f'{args.gem5dir}/configs/example/se.py',
+    command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
+                    else '.opt'), f'--outdir={result_dir}', f'{args.gem5dir}/configs/example/se.py',
                     '--cpu-type=X86O3CPU',
                     '--caches',
                     '-c', f'{workload_path}',
                     f'--options="{benchopts}"',
-                    f'--mem-size=8GB'])
+                    f'--mem-size=8GB',
+                    #Luke XL params
+                    '--l1d_size=256KiB',
+                    '--l1i_size=256KiB',
+                    '--l2_size=4MB'])
     
-    commands.append((result_dir, command))
+    trace_dir = f"{args.trace_dir}/{workload_name}"
+
+    commands.append((result_dir, trace_dir, command))
 
 #Function for single blocking program call
 def run_command(command_tuple):
-    result_dir, command = command_tuple
+    result_dir, trace_dir, command = command_tuple
+
+    #Create modified environment if tracing enabled
+    my_env = os.environ.copy()
+    
+    if (args.gen_trace or args.run_trace):
+        my_env["TRACEDIR"] = trace_dir
+
 
     print(f"Running {result_dir}")
 
     with open(result_dir + "/run.log", 'w+') as log:
         log.write(' '.join(command))
-        process = subprocess.Popen(command, stdout=log, stderr=log)
+        process = subprocess.Popen(command, stdout=log, stderr=log, env=my_env)
         (output, err) = process.communicate()  
         p_status = process.wait()
     
