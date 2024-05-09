@@ -85,6 +85,10 @@ for workload_name in workloads:
 
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
+    
+    trace_dir = f"{args.trace_dir}/{workload_name}"
+    if not os.path.exists(trace_dir):
+        os.makedirs(trace_dir)
 
     workload_path = f"{args.coremarkprodir}/builds/linux64/gcc64/bin/{workloads[workload_name].name}"
     benchopts = ' '.join(workloads[workload_name].args[0])
@@ -103,8 +107,6 @@ for workload_name in workloads:
                     '--l1d_size=256KiB',
                     '--l1i_size=256KiB',
                     '--l2_size=4MB'])
-    
-    trace_dir = f"{args.trace_dir}/{workload_name}"
 
     commands.append((result_dir, trace_dir, command))
 
