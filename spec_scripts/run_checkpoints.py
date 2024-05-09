@@ -25,24 +25,28 @@ parser.add_argument('--warmup',
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_michal",
+                default="/home/michal/Desktop/gem5_stable",
                 help='Path gem5 directory')
 
-parser.add_argument('--simpointdir',
+parser.add_argument('--checkpointdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_11",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10_incomplete",
                 help='Path to input/output directory)')
 
-parser.add_argument('--minispecdir',
+parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_executables",
+                default="/home/michal/Desktop/spec_2017_results",
+                help='Path to result directory')
+
+parser.add_argument('--specexedir',
+                type=str,
+                default="/home/michal/Desktop/spec_2017_rate_executables_gcc_10",
                 help='Path to minispec directory)')
 
-parser.add_argument('-n', '--nthreads',
+parser.add_argument('-j', '--jobs',
                 type=int,
-                default=2,
+                default=32,
                 help='Number of jobs to run in parallel')
-
 
 parser.add_argument('-m', '--memsize',
                 type=int,
@@ -62,8 +66,12 @@ parser.add_argument('--debug',
 args = parser.parse_args()
 
 #Ensure absolute paths
-args.simpointdir = os.path.abspath(args.simpointdir)
-args.minispecdir = os.path.abspath(args.minispecdir)
+args.gem5dir = os.path.abspath(args.gem5dir)
+args.checkpointdir = os.path.abspath(args.checkpointdir)
+args.resultdir = os.path.abspath(args.resultdir)
+args.specexedir = os.path.abspath(args.specexedir)
+
+
 
 # #Delete simpoints if requested
 # if args.clean:
@@ -74,49 +82,74 @@ args.minispecdir = os.path.abspath(args.minispecdir)
 
 #Construct list of commands to be executed in parallel
 commands = []
-sppaths = glob.glob(args.simpointdir + "/**/simpoints.simpts", recursive=True)
-benchexepaths = glob.glob(args.minispecdir + "/**/*.mytest-m64", recursive=True)
+checkpoint_paths = glob.glob(args.checkpointdir + "/**/m5.cpt", recursive=True)
 
-#Emit command for each simpoint path
-for sppath in sppaths:
-    spdir ='/'.join(sppath.split('/')[:-1])
-    spname = sppath.split('/')[-3]
-    spidx = int(sppath.split('/')[-2])
+#Emit command for each checkpoint
+for checkpoint_path in checkpoint_paths:
 
-    benchexepath = [x for x in benchexepaths if spname in x][0]
-
-    #Skip generating clusters for this item if already generated
-    if os.path.exists(spdir + '/simpoints.simpts'):
+    if checkpoint_path != checkpoint_paths[0]:
         continue
 
-    benchopts = ' '.join(workloads[spname].args[spidx])
-    if workloads[spname].std_inputs is not None:
-        benchinfile = workloads[spname].std_inputs[spidx]
+    spec_name = checkpoint_path.split('/')[-5]
+    spec_short_name = spec_name.split('.')[-1]
+    spec_idx = int(checkpoint_path.split('/')[-4])
+    checkpoint_idx = int(checkpoint_path.split('/')[-2].split('_')[1])
+
+    checkpoint_dir ='/'.join(checkpoint_path.split('/')[:-2])
+    result_dir = f"{args.resultdir}/{spec_name}/{spec_idx}/{checkpoint_idx}"
+
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
+
+    spec_exe_path = f'{args.specexedir}/{spec_name}/{spec_short_name}_base.mytest-m64'
+    benchopts = ' '.join(workloads[spec_name].args[spec_idx])
+
+    #Skip skip run if already complete
+    if os.path.exists(result_dir + '/run.done'):
+        with open(result_dir + '/run.done', 'r') as exitcode:
+            if int(exitcode.read().strip()) == 0:
+                print(f'Skipped {result_dir} (run.done exists with 0 exit code)')
+                continue
+
+
+    if workloads[spec_name].std_inputs is not None:
+        benchinfile = workloads[spec_name].std_inputs[spec_idx]
     else:
         benchinfile = None
 
-    benchexename = spname.split('.')[1] 
-    benchexepath = f'{args.minispecdir}/{spname}/{benchexename}_base.mytest-m64'
-
     command = []
     command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
-                    else '.opt'), f'--outdir={spdir}',
-                    f'{args.gem5dir}/configs/deprecated/example/se.py',
-                    '--restore-simpoint-checkpoint',
-                    '--restore-with-cpu=X86KvmCPU'
-                    '--cpu-type=X86O3CPU',
-                    '--checkpoint-restore', f'{checkpointidx}',
-                    '--checkpoint-dir', f'',
-                    '-c', f'{benchexepath}',
-                    f'--options="{benchopts}"',
-                    '--output', f'{spdir}/checkpoints.log',
-                    '--errout', f'{spdir}/checkpoints.log',
-                    f'--mem-size={args.memsize}GB'])
+                    else '.opt'), 
+                    f'--outdir={result_dir}',
 
+                    f'{args.gem5dir}/configs/example/se.py',
+
+                    #Checkpoint bs
+                    '--restore-simpoint-checkpoint',
+                    f'--checkpoint-restore={checkpoint_idx}',
+                    f'--checkpoint-dir={checkpoint_dir}',
+                    '--restore-with-cpu=X86KvmCPU',
+                    #'--restore-with-cpu=X86AtomicSimpleCPU',
+                    
+                    #Workload
+                    f'--cmd={spec_exe_path}',
+                    f'--options="{benchopts}"',
+                    f'--mem-size={args.memsize}GB',
+
+                    #Luke XL params
+                    #'--cpu-type=X86O3CPU',
+                    '--cpu-type=X86O3CPU',
+                    '--caches',
+                    '--l2cache',
+                    '--l1d_size=256KiB',
+                    '--l1i_size=256KiB',
+                    '--l2_size=4MB'
+                    ])
+    
     if benchinfile is not None:
         command.extend(['--input', benchinfile])
     
-    commands.append((spdir, command))
+    commands.append((result_dir, command))
 
 #Function for single blocking program call
 def run_command(command_tuple):
@@ -124,7 +157,7 @@ def run_command(command_tuple):
 
     print(f"Running {spdir}")
 
-    with open(spdir + "/checkpoints.log", 'w+') as log:
+    with open(spdir + "/run.log", 'w+') as log:
         log.write(' '.join(command))
         process = subprocess.Popen(command,) # stdout=, stderr=log
         (output, err) = process.communicate()  
@@ -133,7 +166,7 @@ def run_command(command_tuple):
     print(f"Finished {spdir} with exit code {p_status}")
         
 #Execute commands in parallel with pool
-pool = multiprocessing.Pool(args.nthreads)
+pool = multiprocessing.Pool(args.jobs)
 
 with pool:
     pool.map(run_command, commands)

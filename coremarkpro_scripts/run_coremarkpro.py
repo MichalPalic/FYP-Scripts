@@ -92,12 +92,14 @@ for workload_name in workloads:
     command = []
     command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
                     else '.opt'), f'--outdir={result_dir}', f'{args.gem5dir}/configs/example/se.py',
-                    '--cpu-type=X86O3CPU',
-                    '--caches',
                     '-c', f'{workload_path}',
                     f'--options="{benchopts}"',
                     f'--mem-size=8GB',
+
                     #Luke XL params
+                    '--cpu-type=X86O3CPU',
+                    '--caches',
+                    '--l2cache',
                     '--l1d_size=256KiB',
                     '--l1i_size=256KiB',
                     '--l2_size=4MB'])
@@ -113,6 +115,11 @@ def run_command(command_tuple):
     #Create modified environment if tracing enabled
     my_env = os.environ.copy()
     
+    if (args.gen_trace):
+        my_env["ORACLEMODE"] = "Trace"
+    elif (args.run_trace):
+        my_env["ORACLEMODE"] = "Refine"
+        
     if (args.gen_trace or args.run_trace):
         my_env["TRACEDIR"] = trace_dir
 
