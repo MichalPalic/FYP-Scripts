@@ -23,7 +23,7 @@ parser.add_argument('--workdir',
 
 parser.add_argument('--simpointbin',
                 type=str,
-                default="/home/michal/Desktop/SimPoint.3.2/bin/simpoint",
+                default="/home/michal/Desktop/Simpoint3.2/bin/simpoint",
                 help='Path to simpoints binary file)')
 
 parser.add_argument('--maxcluster',
