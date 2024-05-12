@@ -30,12 +30,12 @@ parser.add_argument('--gem5dir',
 
 parser.add_argument('--checkpointdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10_incomplete",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10",
                 help='Path to input/output directory)')
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_results",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10",
                 help='Path to result directory')
 
 parser.add_argument('--specexedir',
@@ -60,7 +60,7 @@ parser.add_argument('--clean',
 
 parser.add_argument('--debug',
                 action='store_true',
-                default=False,
+                default=True,
                 help='Use gem5 .debug build instead of .opt')
 
 args = parser.parse_args()
@@ -128,17 +128,15 @@ for checkpoint_path in checkpoint_paths:
                     '--restore-simpoint-checkpoint',
                     f'--checkpoint-restore={checkpoint_idx}',
                     f'--checkpoint-dir={checkpoint_dir}',
-                    '--restore-with-cpu=X86KvmCPU',
-                    #'--restore-with-cpu=X86AtomicSimpleCPU',
+                    '--restore-with-cpu=X86AtomicSimpleCPU',
                     
                     #Workload
                     f'--cmd={spec_exe_path}',
-                    f'--options="{benchopts}"',
+                    f'--options={benchopts}',
                     f'--mem-size={args.memsize}GB',
 
                     #Luke XL params
-                    #'--cpu-type=X86O3CPU',
-                    '--cpu-type=X86O3CPU',
+                    '--cpu-type=DerivO3CPU',
                     '--caches',
                     '--l2cache',
                     '--l1d_size=256KiB',

@@ -25,7 +25,7 @@ parser.add_argument('--warmup',
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_michal",
+                default="/home/michal/Desktop/gem5_stable",
                 help='Path gem5 directory')
 
 parser.add_argument('--workdir',
@@ -107,32 +107,33 @@ for sppath in sppaths:
 
     benchexename = spname.split('.')[1] 
     benchexepath = f'{args.specexe}/{spname}/{benchexename}_base.mytest-m64'
+    benchexedir = f'{args.specexe}/{spname}'
 
     if not os.path.exists(f'{spdir}/checkpoints'):
         os.makedirs(f'{spdir}/checkpoints')
     
     command = []
-    command.extend([f'{args.gem5dir}/build/X86/gem5.opt', f'--outdir={spdir}/checkpoints', f'{args.gem5dir}/configs/example/se.py',
-                    '--cpu-type=X86KvmCPU',
+    command.extend([f'{args.gem5dir}/build/X86/gem5.debug', f'--outdir={spdir}/checkpoints', f'{args.gem5dir}/configs/example/se.py',
+                    '--cpu-type=X86AtomicSimpleCPU', '--caches',
                     f'--take-simpoint-checkpoint={spdir}/simpoints.simpts,{spdir}/simpoints.weights,{args.interval},{args.warmup}',
                     '-c', f'{benchexepath}',
-                    f'--options="{benchopts}"',
+                    f'--options={benchopts}',
                     f'--mem-size={args.memsize}GB'])
     
     if benchinfile is not None:
         command.extend(['--input', f'{args.specexe}/{spname}/{benchinfile}'])
     
-    commands.append((spdir, command))
+    commands.append((spdir, benchexedir, command))
 
 #Function for single blocking program call
 def run_command(command_tuple):
-    spdir, command = command_tuple
+    spdir, benchexedir, command = command_tuple
 
     print(f"Running {spdir}")
 
     with open(spdir + "/checkpoints.log", 'w+') as log:
         log.write(' '.join(command))
-        process = subprocess.Popen(command, stdout=log, stderr=log)
+        process = subprocess.Popen(command, stdout=log, stderr=log, cwd=benchexedir)
         (output, err) = process.communicate()  
         p_status = process.wait()
     
