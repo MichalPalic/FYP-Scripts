@@ -15,19 +15,19 @@ parser.add_argument('--interval',
                 default=10**7,
                 help='Set simpoints interval duration in instructions')
 
-parser.add_argument('--specexe',
+parser.add_argument('--specdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_executables_gcc_10",
+                default="/home/michal/Desktop/spec_2017_rate_executables",
                 help='Path to structured compiled extracted executables and input files')
 
 parser.add_argument('--workdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints",
                 help='Output path for saving bbvectors')
 
-parser.add_argument('-n', '--nthreads',
+parser.add_argument('-j', '--jobs',
                 type=int,
-                default=64,
+                default=os.cpu_count(),
                 help='Number of jobs to run in parallel')
 
 parser.add_argument('--clean',
@@ -38,15 +38,12 @@ parser.add_argument('--clean',
 args = parser.parse_args()
 
 #Additional input validation
-if not os.path.exists(args.specexe):
-    print("Specexe path does not exist")
+if not os.path.exists(args.specdir):
+    print("specdir path does not exist")
     sys.exit()
 
-if not os.path.isdir(args.specexe):
-    print("Specexe not a directory")
-    sys.exit()
 
-args.specexe = os.path.abspath(args.specexe)
+args.specdir = os.path.abspath(args.specdir)
 args.workdir = os.path.abspath(args.workdir)
 
 if args.clean:
@@ -56,9 +53,10 @@ if args.clean:
     os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/bb.done"')
     sys.exit()
 
-#Read benchmarks in specexe folder
-entries = os.listdir(args.specexe)
-folders = [folder for folder in entries if os.path.isdir(args.specexe+ '/' + folder)]
+#Read benchmarks in specdir folder
+entries = os.listdir(args.specdir)
+folders = [folder for folder in entries if os.path.isdir(args.specdir+ '/' + folder)]
+folders.sort()
 
 #Construct list of commands to be executed in parallel
 commands = []
@@ -83,13 +81,17 @@ for folder in folders:
 
         #Construct executable path according to weird SPEC semi-convention
         programname = folder.split('.')[1]
-        programdir = args.specexe + '/' + folder
+        programdir = args.specdir + '/' + folder
         programpath = programdir + '/' + programname + '_base.mytest-m64'
 
         assert os.path.isfile(programpath), f"Failed to infer executable path: {programpath}"
 
-        command.extend(['valgrind',  '--tool=exp-bbv', f'--interval-size={args.interval}',
-                        f'--bb-out-file={outdir}/bb.txt', f'{programpath}' ])
+        command.extend(['valgrind',
+                        '--tool=exp-bbv',
+                        f'--interval-size={args.interval}',
+                        f'--bb-out-file={outdir}/bb.txt',
+                        f'{programpath}' ])
+        
         command.extend(benchmark_args)
 
         if benchmark.std_inputs is not None:
@@ -125,7 +127,7 @@ def run_command(command_tuple):
 
         
 #Execute commands in parallel
-pool = multiprocessing.Pool(args.nthreads)
+pool = multiprocessing.Pool(args.jobs)
 
 with pool:
     pool.map(run_command, commands)
