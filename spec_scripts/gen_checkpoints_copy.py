@@ -16,11 +16,11 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--interval',
                 type=int,
-                default=10**3,
+                default=10**7,
                 help='Set simpoints interval duration in instructions')
 parser.add_argument('--warmup',
                 type=int,
-                default=10**1,
+                default=10**6,
                 help='Set simpoints warmup duration in instructions')
 
 parser.add_argument('--gem5dir',
@@ -80,12 +80,12 @@ for sppath in sppaths:
     spname = sppath.split('/')[-3]
     spidx = int(sppath.split('/')[-2])
 
-    # #Skip generating clusters if issues present
-    # if os.path.exists(spdir + '/checkpoints.done'):
-    #     with open(spdir + '/checkpoints.done', 'r') as exitcode:
-    #         if int(exitcode.read().strip()) == 0:
-    #             print(f'Skipped {spdir} (Checkpoints.done with code 0)')
-    #             continue
+    #Skip generating clusters if issues present
+    if os.path.exists(spdir + '/checkpoints.done'):
+        with open(spdir + '/checkpoints.done', 'r') as exitcode:
+            if int(exitcode.read().strip()) == 0:
+                print(f'Skipped {spdir} (Checkpoints.done with code 0)')
+                continue
     
     if os.path.exists(spdir + '/simpoints.done'):
         with open(spdir + '/simpoints.done', 'r') as exitcode:
@@ -117,10 +117,6 @@ for sppath in sppaths:
                     f'--outdir={spdir}/checkpoints', 
                     f'{args.gem5dir}/configs/example/se.py',
                     '--cpu-type=X86KvmCPU',
-                    
-                    #My hacked SE script to switch from Kvm cpu before taking CP
-                    '--checkpoint-with-cpu=X86AtomicSimpleCPU',
-                    '--checkpoint-with-cpu-n=1',  
 
                     f'--take-simpoint-checkpoint={spdir}/simpoints.simpts,{spdir}/simpoints.weights,{args.interval},{args.warmup}',
                     f'--cmd={benchexepath}',

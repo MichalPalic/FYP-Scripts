@@ -126,17 +126,17 @@ for checkpoint_path in checkpoint_paths:
 
                     #Checkpoint bs
                     '--restore-simpoint-checkpoint',
-                    f'--checkpoint-restore={checkpoint_idx}',
+                    f'--checkpoint-restore={checkpoint_idx + 1}',
                     f'--checkpoint-dir={checkpoint_dir}',
                     '--restore-with-cpu=X86AtomicSimpleCPU',
                     
                     #Workload
                     f'--cmd={spec_exe_path}',
-                    f'--options={benchopts}',
+                    f"--options={benchopts}",
                     f'--mem-size={args.memsize}GB',
 
                     #Luke XL params
-                    '--cpu-type=DerivO3CPU',
+                    '--cpu-type=X86O3CPU',
                     '--caches',
                     '--l2cache',
                     '--l1d_size=256KiB',
