@@ -60,7 +60,7 @@ parser.add_argument('--clean',
 
 parser.add_argument('--debug',
                 action='store_true',
-                default=True,
+                default=False,
                 help='Use gem5 .debug build instead of .opt')
 
 args = parser.parse_args()
