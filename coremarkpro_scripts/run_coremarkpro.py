@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_stable",
+                default="/home/michal/Desktop/gem5_oracle_predictor",
                 help='Path to gem5 executable to be used')
 
 parser.add_argument('--coremarkprodir',
@@ -26,7 +26,7 @@ parser.add_argument('--coremarkprodir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_results_gcc_10",
+                default="/home/michal/Desktop/coremarkpro_results",
                 help='Path to input/output directory')
 
 parser.add_argument('-j', '--jobs',
@@ -46,12 +46,12 @@ parser.add_argument('--run_trace',
 
 parser.add_argument('--trace_dir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_trace_gcc_10",
+                default="/home/michal/Desktop/coremarkpro_trace",
                 help='Directory containing/to to contain trace')
 
 parser.add_argument('--debug',
                 action='store_true',
-                default=False,
+                default=True,
                 help='Use gem5 .debug build instead of .opt')
 
 parser.add_argument('-c', '--clean',
