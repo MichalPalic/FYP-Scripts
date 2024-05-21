@@ -5,6 +5,8 @@ import glob
 from workload_spec import *
 import multiprocessing
 import subprocess
+import time
+import random
 
 #If you're getting -6 exit codes, you need to do some system side setup!
 #echo "-1" | sudo tee /proc/sys/kernel/perf_event_paranoid
@@ -163,6 +165,10 @@ for sppath in sppaths:
 #Function for single blocking program call
 def run_command(command_tuple):
     spdir, benchexedir, command, checkpoint_idx = command_tuple
+
+    #Something seems to be causing problems with file access at the same time
+    #Add random delay to prevent clashes
+    time.sleep(random.randint(0, 20))
 
     print(f"Running {spdir} CP:{checkpoint_idx}")
 

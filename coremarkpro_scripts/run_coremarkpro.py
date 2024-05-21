@@ -26,7 +26,7 @@ parser.add_argument('--coremarkprodir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_results",
+                default="/home/michal/Desktop/coremarkpro_trace",
                 help='Path to input/output directory')
 
 parser.add_argument('-j', '--jobs',
@@ -51,7 +51,7 @@ parser.add_argument('--trace_dir',
 
 parser.add_argument('--debug',
                 action='store_true',
-                default=True,
+                default=False,
                 help='Use gem5 .debug build instead of .opt')
 
 parser.add_argument('-c', '--clean',
@@ -95,7 +95,9 @@ for workload_name in workloads:
     
     command = []
     command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
-                    else '.opt'), f'--outdir={result_dir}', f'{args.gem5dir}/configs/example/se.py',
+                    else '.opt'), f'--outdir={result_dir}',
+                    "--debug-flags=FYPDebug,MemOracle",
+                    f'{args.gem5dir}/configs/example/se.py',
                     '-c', f'{workload_path}',
                     f'--options="{benchopts}"',
                     f'--mem-size=8GB',
