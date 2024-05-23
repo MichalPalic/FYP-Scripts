@@ -57,18 +57,19 @@ if args.clean:
 #Construct list of commands to be executed in parallel
 commands = []
 
-for ssit in [256, 512, 1024, 2048, 4096, 8192]:
-        
-    #Proportional to number of entries
-    clear_period_ref = (62464 // (192 + 192)) * 2 * ssit
+for ssit in [192, 256, 512, 1024, 2048, 4096]:
+    for lfst in [192, 256, 512, 1024, 2048, 4096]:
 
-    for clear_mult in [0.125, 0.25, 0.5, 1, 2, 4, 8]:
+        #Add 192, 192 datapoint
+        if (ssit == 192 or lfst == 192) and lfst != ssit:
+            continue
 
-        clear_period = int (clear_period_ref * clear_mult)
+        #Proportional to number of entries
+        clear_period = (62464 // (192 + 192)) * (ssit + lfst)
 
         #Emit command for each simpoint path
         for workload_name in workloads:
-            result_dir = f"{args.resultdir}/{ssit}_{clear_mult}/{workload_name}"
+            result_dir = f"{args.resultdir}/{ssit}_{lfst}/{workload_name}"
 
             #Skip generating command if already run to completion
             if os.path.exists(result_dir + '/run.done'):
@@ -97,7 +98,7 @@ for ssit in [256, 512, 1024, 2048, 4096, 8192]:
                             '--l1d_size=256KiB',
                             '--l1i_size=256KiB',
                             '--l2_size=4MB',
-                            f"--lfst-size={ssit}",
+                            f"--lfst-size={lfst}",
                             f"--ssit-size={ssit}",
                             f"--store-set-clear-period={clear_period}",
                             ])

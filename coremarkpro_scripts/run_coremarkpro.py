@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_oracle_predictor",
+                default="/home/michal/Desktop/gem5_stable",
                 help='Path to gem5 executable to be used')
 
 parser.add_argument('--coremarkprodir',
@@ -96,14 +96,14 @@ for workload_name in workloads:
     command = []
     command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
                     else '.opt'), f'--outdir={result_dir}',
-                    "--debug-flags=FYPDebug,MemOracle",
+                    #"--debug-flags=FYPDebug,MemOracle",
                     f'{args.gem5dir}/configs/example/se.py',
                     '-c', f'{workload_path}',
                     f'--options="{benchopts}"',
                     f'--mem-size=8GB',
 
                     #Luke XL params
-                    '--cpu-type=X86O3CPU',
+                    '--cpu-type=X86TimingSimpleCPU',
                     '--caches',
                     '--l2cache',
                     '--l1d_size=256KiB',
