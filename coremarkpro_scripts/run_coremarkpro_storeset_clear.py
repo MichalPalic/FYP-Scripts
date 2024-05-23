@@ -26,13 +26,18 @@ parser.add_argument('--coremarkprodir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_store_set_sweep",
+                default="/home/michal/Desktop/coremarkpro_clear_sweep",
                 help='Path to input/output directory')
 
 parser.add_argument('-j', '--jobs',
                 type=int,
                 default=multiprocessing.cpu_count(),
                 help='Number of jobs to run in parallel')
+
+parser.add_argument('-m', '--machine',
+                type=int,
+                default=-1,
+                help='ID of machine to run on')
 
 parser.add_argument('--debug',
                 action='store_true',
@@ -57,19 +62,30 @@ if args.clean:
 #Construct list of commands to be executed in parallel
 commands = []
 
-for ssit in [192, 256, 512, 1024, 2048, 4096]:
-    for lfst in [192, 256, 512, 1024, 2048, 4096]:
 
-        #Add 192, 192 datapoint
-        if (ssit == 192 or lfst == 192) and lfst != ssit:
-            continue
+if args.machine == 1:
+    ssitlist = [256, 512, 1024]
 
-        #Proportional to number of entries
-        clear_period = (62464 // (192 + 192)) * (ssit + lfst)
+elif args.machine == 2:
+    ssitlist = [2048, 4096, 8192]
+
+else:
+    ssitlist = [256, 512, 1024, 2048, 4096, 8192]
+    
+print(f"Running with ssit: {ssitlist}")
+
+for ssit in ssitlist :
+        
+    #Proportional to number of entries
+    clear_period_ref = (62464 // (192 + 192)) * 2 * ssit
+
+    for clear_mult in [0.125, 0.25, 0.5, 1, 2, 4, 8]:
+
+        clear_period = int (clear_period_ref * clear_mult)
 
         #Emit command for each simpoint path
         for workload_name in workloads:
-            result_dir = f"{args.resultdir}/{ssit}_{lfst}/{workload_name}"
+            result_dir = f"{args.resultdir}/{ssit}_{clear_mult}/{workload_name}"
 
             #Skip generating command if already run to completion
             if os.path.exists(result_dir + '/run.done'):
@@ -98,7 +114,7 @@ for ssit in [192, 256, 512, 1024, 2048, 4096]:
                             '--l1d_size=256KiB',
                             '--l1i_size=256KiB',
                             '--l2_size=4MB',
-                            f"--lfst-size={lfst}",
+                            f"--lfst-size={ssit}",
                             f"--ssit-size={ssit}",
                             f"--store-set-clear-period={clear_period}",
                             ])
