@@ -99,7 +99,7 @@ for workload_name in workloads:
                     #"--debug-flags=FYPDebug,MemOracle",
                     f'{args.gem5dir}/configs/example/se.py',
                     '-c', f'{workload_path}',
-                    f'--options="{benchopts}"',
+                    f'--options={benchopts}',
                     f'--mem-size=8GB',
 
                     #Luke XL params

@@ -16,17 +16,17 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_stable",
+                default="/vol/bitbucket/mp3120/gem5_stable",
                 help='Path to gem5 executable to be used')
 
 parser.add_argument('--coremarkprodir',
                 type=str,
-                default="/home/michal/Desktop/coremark-pro",
+                default="/vol/bitbucket/mp3120/coremark-pro",
                 help='Path to gem5 executable to be used')
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_clear_sweep",
+                default="/vol/bitbucket/mp3120/coremarkpro_clear_sweep",
                 help='Path to input/output directory')
 
 parser.add_argument('-j', '--jobs',
@@ -104,7 +104,7 @@ for ssit in ssitlist :
             command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
                             else '.opt'), f'--outdir={result_dir}', f'{args.gem5dir}/configs/example/se.py',
                             '-c', f'{workload_path}',
-                            f'--options="{benchopts}"',
+                            f'--options={benchopts}',
                             f'--mem-size=8GB',
 
                             #Luke XL params

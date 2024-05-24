@@ -93,7 +93,7 @@ for ssit in [192, 256, 512, 1024, 2048, 4096]:
             command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
                             else '.opt'), f'--outdir={result_dir}', f'{args.gem5dir}/configs/example/se.py',
                             '-c', f'{workload_path}',
-                            f'--options="{benchopts}"',
+                            f'--options={benchopts}',
                             f'--mem-size=8GB',
 
                             #Luke XL params
