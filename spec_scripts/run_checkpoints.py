@@ -87,8 +87,8 @@ checkpoint_paths = glob.glob(args.checkpointdir + "/**/m5.cpt", recursive=True)
 #Emit command for each checkpoint
 for checkpoint_path in checkpoint_paths:
 
-    if checkpoint_path != checkpoint_paths[0]:
-        continue
+    # if checkpoint_path != checkpoint_paths[3]:
+    #     continue
 
     spec_name = checkpoint_path.split('/')[-5]
     spec_short_name = spec_name.split('.')[-1]
@@ -102,6 +102,7 @@ for checkpoint_path in checkpoint_paths:
         os.makedirs(result_dir)
 
     spec_exe_path = f'{args.specexedir}/{spec_name}/{spec_short_name}_base.mytest-m64'
+    spec_exe_dir = f'{args.specexedir}/{spec_name}'
     benchopts = ' '.join(workloads[spec_name].args[spec_idx])
 
     #Skip skip run if already complete
@@ -147,17 +148,17 @@ for checkpoint_path in checkpoint_paths:
     if benchinfile is not None:
         command.extend(['--input', benchinfile])
     
-    commands.append((result_dir, command))
+    commands.append((result_dir, spec_exe_dir, command))
 
 #Function for single blocking program call
 def run_command(command_tuple):
-    spdir, command = command_tuple
+    spdir, spec_exe_dir, command = command_tuple
 
     print(f"Running {spdir}")
 
     with open(spdir + "/run.log", 'w+') as log:
         log.write(' '.join(command))
-        process = subprocess.Popen(command,) # stdout=, stderr=log
+        process = subprocess.Popen(command, cwd=spec_exe_dir) # stdout=, stderr=log
         (output, err) = process.communicate()  
         p_status = process.wait()
     

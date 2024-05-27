@@ -103,7 +103,7 @@ for workload_name in workloads:
                     f'--mem-size=8GB',
 
                     #Luke XL params
-                    '--cpu-type=X86TimingSimpleCPU',
+                    '--cpu-type=X86O3CPU',
                     '--caches',
                     '--l2cache',
                     '--l1d_size=256KiB',
