@@ -50,7 +50,7 @@ parser.add_argument('-j', '--jobs',
 
 parser.add_argument('-m', '--memsize',
                 type=int,
-                default=8,
+                default=16,
                 help='Maximum memory size')
 
 parser.add_argument('--clean',
