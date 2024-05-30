@@ -23,16 +23,9 @@ get_eff_seq_dists.restype = ctypes.POINTER(ctypes.c_char_p)
 get_branch_dists = cpplibrary.get_branch_dists
 get_branch_dists.restype = ctypes.POINTER(ctypes.c_char_p)
 
+get_takenness = cpplibrary.get_takenness
+get_takenness.restype = ctypes.POINTER(ctypes.c_char_p)
 
-#cpplibrary.ctypes.POINTER(ctypes.c_int)
-
-# func = clibrary.display
-# func.argtypes = [ctypes.c_char_p, ctypes.c_int]
-# func.restype = ctypes.c_char_p
-
-# clibrary.getArray.restype = ctypes.POINTER(ctypes.c_int)
-# result = clibrary.getArray()
-# mylist = result[:]
 
 calculate_statistics(b'/home/michal/Downloads/sha1M.csv')
 #calculate_statistics(b'/home/michal/Desktop/coremarkpro_trace/radix2/full_trace.csv')
@@ -78,7 +71,7 @@ plt.yscale('log')
 plt.show(block=True)
 
 #Plot branch dists
-pystr = ctypes.c_char_p.from_buffer(get_branch_dists).value.decode('utf-8')
+pystr = ctypes.c_char_p.from_buffer(get_branch_dists()).value.decode('utf-8')
 temp = pystr.split(',')[:-1]
 branch_dists = [int(x.split(':')[0]) for x in temp]
 branch_dists_counts = [int(x.split(':')[1]) for x in temp]
@@ -96,13 +89,19 @@ plt.xticks(positions, labels)
 plt.yscale('log')
 plt.show(block=True)
 
-# def main():
-#     # Reading input from standard input
-#     print("Enter a list of numbers separated by spaces:")
-#     #input_numbers = sys.stdin.read().strip()
-#     input_numbers = "1 2 3 2 1"
-    
-#     
 
-# if __name__ == '__main__':
-#     main()
+#Plot MDP takenness
+hist_str_list = ctypes.c_char_p.from_buffer(get_takenness()).value.decode('utf-8').split(',')[:-1]
+hist_counts = [int(x) for x in hist_str_list]
+hist_sum = sum(branch_dists_counts)
+hist_p = [float(x)/branch_dists_sum for x in branch_dists_counts]
+
+labels = [str(i) for i in range(len(hist_counts))]
+positions = np.arange(len(hist_counts))
+plt.bar(positions, hist_counts, color='blue', edgecolor='black')
+plt.xlabel('Bins')
+plt.ylabel('Frequency')
+plt.title('Histogram of takenness')
+plt.xticks(positions, labels)
+plt.yscale('log')
+plt.show(block=True)

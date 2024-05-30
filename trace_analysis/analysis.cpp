@@ -156,7 +156,7 @@ std::vector<trace_elem> trace;
 
   //Address to effective seqnum distance
   uint64_t global_branch_n;
-  std::unordered_map<uint64_t, uint64_t> branchDist;
+  std::map<uint64_t, uint64_t> branchDist;
   std::unordered_map<uint64_t, uint64_t> branchDistCache;
 
   //Pc -> Pc + count relation
@@ -282,12 +282,43 @@ extern "C"{
     std::string out = "";
 
     for ( auto dist : branchDist){
-        if (dist.second > 1){
             out += std::to_string(dist.first);
             out +=':';
             out += std::to_string(dist.second);
             out +=',';
+    }
+
+    return strdup(out.c_str());
+  }
+
+  char* get_takenness(){
+    //Initialize histogram
+    const uint32_t histogram_bins = 40;
+    std::vector<uint64_t> histogram(histogram_bins, 0);
+
+    //Iterate over outer map
+    for(auto outer : pairCounts){
+
+        //Calculate sum of inner map
+        uint64_t inner_sum = 0;
+        for(auto inner : outer.second){
+            inner_sum += inner.second;
         }
+
+        //Add takenness to histogram
+        for(auto inner : outer.second){
+            float takenness = float(inner.second) / float(inner_sum);
+            int hist_idx = takenness * histogram_bins;
+            histogram[hist_idx]++;
+        }
+    }
+
+    //Dump histogram to string
+    std::string out = "";
+
+    for ( auto h : histogram){
+            out += std::to_string(h);
+            out +=',';
     }
 
     return strdup(out.c_str());
