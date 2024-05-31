@@ -30,7 +30,7 @@ parser.add_argument('--gem5dir',
 
 parser.add_argument('--checkpointdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10",
+                default="/home/michal/Desktop/spec_2017_rate_checkpoints",
                 help='Path to input/output directory)')
 
 parser.add_argument('--resultdir',
@@ -40,7 +40,7 @@ parser.add_argument('--resultdir',
 
 parser.add_argument('--specexedir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_executables_gcc_10",
+                default="/home/michal/Desktop/spec_2017_rate_executables",
                 help='Path to minispec directory)')
 
 parser.add_argument('-j', '--jobs',
@@ -50,7 +50,7 @@ parser.add_argument('-j', '--jobs',
 
 parser.add_argument('-m', '--memsize',
                 type=int,
-                default=8,
+                default=16,
                 help='Maximum memory size')
 
 parser.add_argument('--clean',
@@ -144,30 +144,32 @@ for checkpoint_path in checkpoint_paths:
                     '--l1i_size=256KiB',
                     '--l2_size=4MB'
                     ])
+
     
     if benchinfile is not None:
         command.extend(['--input', benchinfile])
     
     commands.append((result_dir, spec_exe_dir, command))
+    print(' '.join(commands[-1][-1]))
 
-#Function for single blocking program call
-def run_command(command_tuple):
-    spdir, spec_exe_dir, command = command_tuple
+# #Function for single blocking program call
+# def run_command(command_tuple):
+#     spdir, spec_exe_dir, command = command_tuple
 
-    print(f"Running {spdir}")
+#     print(f"Running {spdir}")
 
-    with open(spdir + "/run.log", 'w+') as log:
-        log.write(' '.join(command))
-        process = subprocess.Popen(command, cwd=spec_exe_dir) # stdout=, stderr=log
-        (output, err) = process.communicate()  
-        p_status = process.wait()
+#     with open(spdir + "/run.log", 'w+') as log:
+#         log.write(' '.join(command))
+#         process = subprocess.Popen(command, cwd=spec_exe_dir) # stdout=, stderr=log
+#         (output, err) = process.communicate()  
+#         p_status = process.wait()
     
-    print(f"Finished {spdir} with exit code {p_status}")
+#     print(f"Finished {spdir} with exit code {p_status}")
         
-#Execute commands in parallel with pool
-pool = multiprocessing.Pool(args.jobs)
+# #Execute commands in parallel with pool
+# pool = multiprocessing.Pool(args.jobs)
 
-with pool:
-    pool.map(run_command, commands)
+# with pool:
+#     pool.map(run_command, commands)
 
-print("Done")
+# print("Done")
