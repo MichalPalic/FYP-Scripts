@@ -25,7 +25,7 @@ parser.add_argument('--warmup',
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_stable",
+                default="/home/michal/Desktop/gem5_oracle",
                 help='Path gem5 directory')
 
 parser.add_argument('--checkpointdir',
@@ -35,7 +35,7 @@ parser.add_argument('--checkpointdir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/spec_2017_rate_checkpoints_gcc_10",
+                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_results",
                 help='Path to result directory')
 
 parser.add_argument('--specexedir',
@@ -45,7 +45,7 @@ parser.add_argument('--specexedir',
 
 parser.add_argument('-j', '--jobs',
                 type=int,
-                default=32,
+                default=multiprocessing.cpu_count(),
                 help='Number of jobs to run in parallel')
 
 parser.add_argument('-m', '--memsize',
@@ -53,15 +53,26 @@ parser.add_argument('-m', '--memsize',
                 default=16,
                 help='Maximum memory size')
 
-parser.add_argument('--clean',
-                action='store_true',
-                default=False,
-                help='Clean existing ')
-
 parser.add_argument('--debug',
                 action='store_true',
                 default=False,
                 help='Use gem5 .debug build instead of .opt')
+
+#Oracle options
+parser.add_argument('--gen_trace',
+                action='store_true',
+                default=False,
+                help='Generate oracle trace')
+
+parser.add_argument('--refine_trace',
+                action='store_true',
+                default=False,
+                help='Use trace to run and refine workload with oracle')
+
+parser.add_argument('--trace_dir',
+                type=str,
+                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_trace",
+                help='Directory containing/to to contain trace')
 
 args = parser.parse_args()
 
@@ -71,24 +82,12 @@ args.checkpointdir = os.path.abspath(args.checkpointdir)
 args.resultdir = os.path.abspath(args.resultdir)
 args.specexedir = os.path.abspath(args.specexedir)
 
-
-
-# #Delete simpoints if requested
-# if args.clean:
-#     os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/simpoints.simpts"')
-#     os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/simpoints.weights"')
-#     os.system(f'/bin/bash -c "shopt -s globstar; rm {args.workdir}/**/simpoints.log"')
-#     sys.exit()
-
 #Construct list of commands to be executed in parallel
 commands = []
 checkpoint_paths = glob.glob(args.checkpointdir + "/**/m5.cpt", recursive=True)
 
 #Emit command for each checkpoint
 for checkpoint_path in checkpoint_paths:
-
-    # if checkpoint_path != checkpoint_paths[3]:
-    #     continue
 
     spec_name = checkpoint_path.split('/')[-5]
     spec_short_name = spec_name.split('.')[-1]
@@ -100,6 +99,10 @@ for checkpoint_path in checkpoint_paths:
 
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
+
+    trace_dir = f"{args.trace_dir}/{spec_name}/{spec_idx}/{checkpoint_idx}"
+    if (args.gen_trace or args.refine_trace) and not os.path.exists(trace_dir):
+        os.makedirs(trace_dir)
 
     spec_exe_path = f'{args.specexedir}/{spec_name}/{spec_short_name}_base.mytest-m64'
     spec_exe_dir = f'{args.specexedir}/{spec_name}'
@@ -123,7 +126,7 @@ for checkpoint_path in checkpoint_paths:
                     else '.opt'), 
                     f'--outdir={result_dir}',
 
-                    f'{args.gem5dir}/configs/example/se.py',
+                    f'{args.gem5dir}/configs/deprecated/example/se.py',
 
                     #Checkpoint bs
                     '--restore-simpoint-checkpoint',
@@ -133,8 +136,10 @@ for checkpoint_path in checkpoint_paths:
                     
                     #Workload
                     f'--cmd={spec_exe_path}',
-                    f"--options={benchopts}",
+                    f'--options={benchopts}',
+                    f'--mem-type=DDR3_1600_8x8',
                     f'--mem-size={args.memsize}GB',
+                    f'--mem-channels={2}',
 
                     #Luke XL params
                     '--cpu-type=X86O3CPU',
@@ -148,28 +153,38 @@ for checkpoint_path in checkpoint_paths:
     
     if benchinfile is not None:
         command.extend(['--input', benchinfile])
+
+    commands.append((result_dir, spec_exe_dir, trace_dir, command))
+
+#Function for single blocking program call
+def run_command(command_tuple):
+    result_dir, spec_exe_dir, trace_dir, command = command_tuple
+
+    #Create modified environment if tracing enabled
+    my_env = os.environ.copy()
     
-    commands.append((result_dir, spec_exe_dir, command))
-    print(' '.join(commands[-1][-1]))
-
-# #Function for single blocking program call
-# def run_command(command_tuple):
-#     spdir, spec_exe_dir, command = command_tuple
-
-#     print(f"Running {spdir}")
-
-#     with open(spdir + "/run.log", 'w+') as log:
-#         log.write(' '.join(command))
-#         process = subprocess.Popen(command, cwd=spec_exe_dir) # stdout=, stderr=log
-#         (output, err) = process.communicate()  
-#         p_status = process.wait()
-    
-#     print(f"Finished {spdir} with exit code {p_status}")
+    if (args.gen_trace):
+        my_env["ORACLEMODE"] = "Trace"
+    elif (args.refine_trace):
+        my_env["ORACLEMODE"] = "Refine"
         
-# #Execute commands in parallel with pool
-# pool = multiprocessing.Pool(args.jobs)
+    if (args.gen_trace or args.run_trace):
+        my_env["TRACEDIR"] = trace_dir
 
-# with pool:
-#     pool.map(run_command, commands)
+    print(f"Running {result_dir}")
 
-# print("Done")
+    with open(result_dir + "/run.log", 'w+') as log:
+        log.write(' '.join(command))
+        process = subprocess.Popen(command, cwd=spec_exe_dir, stdout=log, stderr=log, env=my_env)
+        (output, err) = process.communicate()  
+        p_status = process.wait()
+    
+    print(f"Finished {result_dir} with exit code {p_status}")
+        
+#Execute commands in parallel with pool
+pool = multiprocessing.Pool(args.jobs)
+
+with pool:
+    pool.map(run_command, commands)
+
+print("Done")

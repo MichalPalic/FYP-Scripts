@@ -10,6 +10,12 @@
 #include <cassert>
 #include <string.h>
 
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/zstd.hpp>
+#include <iostream>
+#include <string>
+
 //Common helper classes
 //Setup to allow TraceUID to be used as hashmap key
 struct TraceUID
@@ -79,10 +85,10 @@ struct trace_elem
 
 std::vector<trace_elem> trace;
 
-  void load_trace(std::fstream& infile, uint64_t n){
+  void load_trace(boost::iostreams::filtering_istream& infile, uint64_t n){
       std::string line;
 
-      if (!infile.is_open()){
+      if (infile.fail()){
           printf("Failed to open mem trace path \n");
           return;
       }
@@ -365,12 +371,13 @@ extern "C"{
   }
 
   void calculate_statistics(char const* trace_path){
-    std::fstream infile;
-    infile.open(trace_path, std::ios::in);
-    assert(infile.is_open());
+      boost::iostreams::filtering_istream infile;
+      infile.push(boost::iostreams::zstd_decompressor());
+      infile.push(boost::iostreams::file_source(trace_path));
 
     //Chunk loading and processing
-    while (infile.peek() != EOF){
+    //while (infile.peek() != EOF){
+    while (!infile.eof()){
         printf("Back to loading\n");
         load_trace(infile, 1000000);
         printf("Back to traversing\n");
@@ -378,13 +385,13 @@ extern "C"{
         trace.clear();
     }
 
-    infile.close();
+    // infile.close();
   }
 }
 
 int main(){
     //Load trace from file
     printf("Running main\n");
-    calculate_statistics("/home/michal/Downloads/sha_full_trace.csv");
+    calculate_statistics("/home/michal/Downloads/sha100k.csv.zst");
     printf("%s", get_branch_dists());
 }

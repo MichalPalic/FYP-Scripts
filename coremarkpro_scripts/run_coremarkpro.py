@@ -26,12 +26,12 @@ parser.add_argument('--coremarkprodir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_trace_result",
+                default="/home/michal/Desktop/windows/FYP/coremarkpro_trace_result",
                 help='Path to input/output directory')
 
 parser.add_argument('--trace_dir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_trace",
+                default="/home/michal/Desktop/windows/FYP/coremarkpro_trace",
                 help='Directory containing/to to contain trace')
 
 parser.add_argument('-j', '--jobs',
