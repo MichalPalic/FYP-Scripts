@@ -178,6 +178,9 @@ def run_command(command_tuple):
         process = subprocess.Popen(command, cwd=spec_exe_dir, stdout=log, stderr=log, env=my_env)
         (output, err) = process.communicate()  
         p_status = process.wait()
+
+    with open(result_dir  + "/run.done", 'w+') as statusf:
+        statusf.write(str(p_status))
     
     print(f"Finished {result_dir} with exit code {p_status}")
         
