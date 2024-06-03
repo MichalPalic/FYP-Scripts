@@ -2,6 +2,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -184,80 +185,89 @@ std::vector<trace_elem> trace;
 
           //Normal store
           if(!elem.load){
-              seqDistCache[elem.mem_addr] = elem.seqNum;
-              effSeqDistCache[elem.mem_addr] = elem.effSeqNum;
-
-              branchDistCache[elem.mem_addr] = global_branch_n; 
-              pairCache[elem.mem_addr] = elem.tuid.pc;
-
+              for (uint32_t i = 0; i < elem.mem_size; i++){
+                seqDistCache[elem.mem_addr + i] = elem.seqNum;
+                effSeqDistCache[elem.mem_addr + i] = elem.effSeqNum;
+                branchDistCache[elem.mem_addr + i] = global_branch_n; 
+                pairCache[elem.mem_addr + i] = elem.tuid.pc;
+              }
 
           //Normal load
           } else if(elem.load && elem.valid){
                 
                 //Log seq distance 
-                uint64_t distance = 0;
-                if (seqDistCache.contains(elem.mem_addr))
-                    distance = elem.seqNum - seqDistCache[elem.mem_addr];
-                else 
-                    distance = 0;
-                
-                if (seqDist.contains(distance))
-                    seqDist[distance] += weight;
-                else
-                    seqDist[distance] = weight;
+                std::set<uint64_t> seq_dist_set;
+
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                  if (seqDistCache.contains(elem.mem_addr + i))
+                      seq_dist_set.insert(elem.seqNum - seqDistCache[elem.mem_addr + i]);
+                  else 
+                      seq_dist_set.insert(0);
+                }
+
+                for (auto seq_dist_elem : seq_dist_set){
+                    if (seqDist.contains(seq_dist_elem))
+                        seqDist[seq_dist_elem] += weight;
+                    else
+                        seqDist[seq_dist_elem] = weight;
+                }
 
                 //Log eff seq distance 
-                if (effSeqDistCache.contains(elem.mem_addr))
-                    distance = elem.effSeqNum - effSeqDistCache[elem.mem_addr];
-                else 
-                    distance = 0;
-                
-                if (effSeqDist.contains(distance))
-                    effSeqDist[distance] += weight;
-                else
-                    effSeqDist[distance] = weight;
+                std::set<uint64_t> eff_seq_dist_set;
 
-                //Log eff seq distance 
-                if (effSeqDistCache.contains(elem.mem_addr))
-                    distance = elem.effSeqNum - effSeqDistCache[elem.mem_addr];
-                else 
-                    distance = 0;
-                
-                if (effSeqDist.contains(distance))
-                    effSeqDist[distance] += weight;
-                else
-                    effSeqDist[distance] += weight;
-                
-                //Log branch distance 
-                if (branchDistCache.contains(elem.mem_addr))
-                    distance = global_branch_n - branchDistCache[elem.mem_addr];
-                else 
-                    distance = uint64_t(-1);
-                
-                if (branchDist.contains(distance))
-                    branchDist[distance] += weight;
-                else
-                    branchDist[distance] = weight;
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                  if (effSeqDistCache.contains(elem.mem_addr + i))
+                      eff_seq_dist_set.insert(elem.effSeqNum - effSeqDistCache[elem.mem_addr + i]);
+                  else 
+                      eff_seq_dist_set.insert(0);
+                }
 
-                uint64_t pc = 0;
-                if (pairCache.contains(elem.mem_addr))
-                    pc = pairCache[elem.mem_addr];
-                else
-                    pc = 0;
-        
-                if (pairCounts[elem.tuid.pc].contains(pc))
-                    pairCounts[elem.tuid.pc][pc] += weight;
-                else
-                    pairCounts[elem.tuid.pc][pc] = weight;
+                for (auto eff_seq_dist_elem : eff_seq_dist_set){
+                    if (effSeqDist.contains(eff_seq_dist_elem))
+                        effSeqDist[eff_seq_dist_elem] += weight;
+                    else
+                        effSeqDist[eff_seq_dist_elem] = weight;
+                }
+
+                //Log branch distance
+                std::set<uint64_t> branch_dist_set;
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                                                   
+                    if (branchDistCache.contains(elem.mem_addr + i))
+                        branch_dist_set.insert(global_branch_n - branchDistCache[elem.mem_addr + i]);
+                    else 
+                        branch_dist_set.insert(uint64_t(-1));
+                }
+
+                for (auto branch_dist_elem : branch_dist_set){
+                  if (branchDist.contains(branch_dist_elem))
+                      branchDist[branch_dist_elem] += weight;
+                  else
+                      branchDist[branch_dist_elem] = weight;
+
+                }
+ 
+                // Log cache pairs
+                std::set<uint64_t> pc_set;
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                  if (pairCache.contains(elem.mem_addr + i))
+                      pc_set.insert(pairCache[elem.mem_addr + i]);
+                  else
+                      pc_set.insert(0);
+                }
+
+                for (auto pc_set_elem : pc_set){
+                  if (pairCounts[elem.tuid.pc].contains(pc_set_elem))
+                      pairCounts[elem.tuid.pc][pc_set_elem] += weight;
+                  else
+                      pairCounts[elem.tuid.pc][pc_set_elem] = weight;
+                }
 
           //Branch 
           } else if (elem.load && !elem.valid){
             global_branch_n++;
 
-          } else {
-            assert(false);
-          }
-
+          } 
       }
 
   }
