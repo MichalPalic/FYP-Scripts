@@ -5,6 +5,8 @@ import glob
 from workload_spec import *
 import multiprocessing
 import subprocess
+from datetime import datetime
+
 
 #Some setup
 #echo "-1" | sudo tee /proc/sys/kernel/perf_event_paranoid
@@ -35,7 +37,7 @@ parser.add_argument('--checkpointdir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_results",
+                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_results_r1",
                 help='Path to result directory')
 
 parser.add_argument('--specexedir',
@@ -59,17 +61,17 @@ parser.add_argument('--debug',
                 help='Use gem5 .debug build instead of .opt')
 
 #Oracle options
-parser.add_argument('--gen_trace',
+parser.add_argument('--gen-trace',
                 action='store_true',
                 default=False,
                 help='Generate oracle trace')
 
-parser.add_argument('--refine_trace',
+parser.add_argument('--refine-trace',
                 action='store_true',
                 default=False,
                 help='Use trace to run and refine workload with oracle')
 
-parser.add_argument('--trace_dir',
+parser.add_argument('--trace-dir',
                 type=str,
                 default="/home/michal/Desktop/windows/FYP/spec_2017_rate_trace",
                 help='Directory containing/to to contain trace')
@@ -123,7 +125,7 @@ for checkpoint_path in checkpoint_paths:
 
     command = []
     command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
-                    else '.opt'), 
+                    else '.fast'), 
                     f'--outdir={result_dir}',
 
                     f'{args.gem5dir}/configs/deprecated/example/se.py',
@@ -147,7 +149,8 @@ for checkpoint_path in checkpoint_paths:
                     '--l2cache',
                     '--l1d_size=256KiB',
                     '--l1i_size=256KiB',
-                    '--l2_size=4MB'
+                    '--l2_size=4MB',
+                    f"--lsq-dep-check-shift={1 if args.refine_trace else 4}"
                     ])
 
     
@@ -168,10 +171,13 @@ def run_command(command_tuple):
     elif (args.refine_trace):
         my_env["ORACLEMODE"] = "Refine"
         
-    if (args.gen_trace or args.run_trace):
+    if ((args.gen_trace) or (args.refine_trace)):
         my_env["TRACEDIR"] = trace_dir
 
-    print(f"Running {result_dir}")
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime('%d.%m %H:%M')
+
+    print(f"{formatted_datetime}: Running {result_dir}")
 
     with open(result_dir + "/run.log", 'w+') as log:
         log.write(' '.join(command))
@@ -182,7 +188,9 @@ def run_command(command_tuple):
     with open(result_dir  + "/run.done", 'w+') as statusf:
         statusf.write(str(p_status))
     
-    print(f"Finished {result_dir} with exit code {p_status}")
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime('%d.%m %H:%M')
+    print(f"{formatted_datetime}: Finished {result_dir} with exit code {p_status}")
         
 #Execute commands in parallel with pool
 pool = multiprocessing.Pool(args.jobs)

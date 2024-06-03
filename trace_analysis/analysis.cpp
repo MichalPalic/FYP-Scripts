@@ -62,6 +62,7 @@ struct trace_elem
     uint64_t seqNum;
     uint64_t effSeqNum;
     uint64_t mem_addr;
+    uint32_t mem_size;
 
   trace_elem(){}
   trace_elem( 
@@ -71,14 +72,15 @@ struct trace_elem
     TraceUID _dep,
     uint64_t _seqNum,
     uint64_t _effSeqNum,
-    uint64_t _mem_addr): 
+    uint64_t _mem_addr,
+    uint64_t _mem_size): 
     valid(_valid), load(_load), tuid(_tuid), dep(_dep), seqNum(_seqNum), 
-    effSeqNum(_effSeqNum), mem_addr(_mem_addr){}
+    effSeqNum(_effSeqNum), mem_addr(_mem_addr), mem_size(_mem_size){}
 };
 
   //Tuple holds bool:  Valid (bool), Load(true)/store(false),
   //this pc/access_number, pc/access_number dependent, sequence_number,
-  //eff_sequence_number mem_addr
+  //eff_sequence_number, mem_addr, access size (Bytes)
 
 // using full_trace_T = std::tuple<bool, bool, TraceUID, TraceUID, uint64_t,
 //       uint64_t, uint64_t>;
@@ -108,6 +110,7 @@ std::vector<trace_elem> trace;
           uint64_t seqNum;
           uint64_t effSeqNum;
           uint64_t mem_addr;
+          uint64_t mem_size;
 
           uint64_t pc,n_visited;
 
@@ -145,32 +148,35 @@ std::vector<trace_elem> trace;
           std::getline(ss, temp, ',');
           mem_addr = std::stoull(temp);
 
+          std::getline(ss, temp, ',');
+          mem_size = std::stoull(temp);
+
           trace.push_back(
-              trace_elem(valid, load, tuid, dep, seqNum, effSeqNum, mem_addr>>4));
+              trace_elem(valid, load, tuid, dep, seqNum, effSeqNum, mem_addr, mem_size));
 
           line_n++;
       }
   };
 
   //Address to seqnum distance
-  std::map<uint64_t, uint64_t> seqDist;
+  std::map<uint64_t, double> seqDist;
   std::unordered_map<uint64_t, uint64_t> seqDistCache;
 
   //Address to effective seqnum distance
-  std::map<uint64_t, uint64_t> effSeqDist;
+  std::map<uint64_t, double> effSeqDist;
   std::unordered_map<uint64_t, uint64_t> effSeqDistCache;
 
   //Address to effective seqnum distance
   uint64_t global_branch_n;
-  std::map<uint64_t, uint64_t> branchDist;
+  std::map<uint64_t, double> branchDist;
   std::unordered_map<uint64_t, uint64_t> branchDistCache;
 
   //Pc -> Pc + count relation
   //Backwards address cache address -> PC
   std::unordered_map<uint64_t, uint64_t> pairCache;
-  std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>> pairCounts;
+  std::unordered_map<uint64_t, std::unordered_map<uint64_t,double>> pairCounts;
 
-  void traverse(){
+  void traverse(float weight){
 
       for(auto i =  trace.begin(); i != trace.end(); i++){
 
@@ -196,9 +202,9 @@ std::vector<trace_elem> trace;
                     distance = 0;
                 
                 if (seqDist.contains(distance))
-                    seqDist[distance]++;
+                    seqDist[distance] += weight;
                 else
-                    seqDist[distance] = 1;
+                    seqDist[distance] = weight;
 
                 //Log eff seq distance 
                 if (effSeqDistCache.contains(elem.mem_addr))
@@ -207,9 +213,9 @@ std::vector<trace_elem> trace;
                     distance = 0;
                 
                 if (effSeqDist.contains(distance))
-                    effSeqDist[distance]++;
+                    effSeqDist[distance] += weight;
                 else
-                    effSeqDist[distance] = 1;
+                    effSeqDist[distance] = weight;
 
                 //Log eff seq distance 
                 if (effSeqDistCache.contains(elem.mem_addr))
@@ -218,9 +224,9 @@ std::vector<trace_elem> trace;
                     distance = 0;
                 
                 if (effSeqDist.contains(distance))
-                    effSeqDist[distance]++;
+                    effSeqDist[distance] += weight;
                 else
-                    effSeqDist[distance] = 1;
+                    effSeqDist[distance] += weight;
                 
                 //Log branch distance 
                 if (branchDistCache.contains(elem.mem_addr))
@@ -229,9 +235,9 @@ std::vector<trace_elem> trace;
                     distance = uint64_t(-1);
                 
                 if (branchDist.contains(distance))
-                    branchDist[distance]++;
+                    branchDist[distance] += weight;
                 else
-                    branchDist[distance] = 1;
+                    branchDist[distance] = weight;
 
                 uint64_t pc = 0;
                 if (pairCache.contains(elem.mem_addr))
@@ -240,9 +246,9 @@ std::vector<trace_elem> trace;
                     pc = 0;
         
                 if (pairCounts[elem.tuid.pc].contains(pc))
-                    pairCounts[elem.tuid.pc][pc] ++;
+                    pairCounts[elem.tuid.pc][pc] += weight;
                 else
-                    pairCounts[elem.tuid.pc][pc] = 1;
+                    pairCounts[elem.tuid.pc][pc] = weight;
 
           //Branch 
           } else if (elem.load && !elem.valid){
@@ -370,7 +376,7 @@ extern "C"{
 
   }
 
-  void calculate_statistics(char const* trace_path){
+  void calculate_statistics(char const* trace_path, float weight){
       boost::iostreams::filtering_istream infile;
       infile.push(boost::iostreams::zstd_decompressor());
       infile.push(boost::iostreams::file_source(trace_path));
@@ -381,7 +387,7 @@ extern "C"{
         printf("Back to loading\n");
         load_trace(infile, 1000000);
         printf("Back to traversing\n");
-        traverse();
+        traverse(weight);
         trace.clear();
     }
 
@@ -392,6 +398,6 @@ extern "C"{
 int main(){
     //Load trace from file
     printf("Running main\n");
-    calculate_statistics("/home/michal/Downloads/sha100k.csv.zst");
+    calculate_statistics("/home/michal/Downloads/sha100k.csv.zst", 1.0f);
     printf("%s", get_branch_dists());
 }
