@@ -37,7 +37,7 @@ parser.add_argument('--checkpointdir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_results_r1",
+                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_results_a2",
                 help='Path to result directory')
 
 parser.add_argument('--specexedir',
@@ -73,7 +73,7 @@ parser.add_argument('--refine-trace',
 
 parser.add_argument('--trace-dir',
                 type=str,
-                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_trace",
+                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_trace_a2",
                 help='Directory containing/to to contain trace')
 
 args = parser.parse_args()

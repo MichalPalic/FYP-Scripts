@@ -149,8 +149,10 @@ std::vector<trace_elem> trace;
           std::getline(ss, temp, ',');
           mem_addr = std::stoull(temp);
 
-          std::getline(ss, temp, ',');
-          mem_size = std::stoull(temp);
+          //This is bugged rn, the trace does not get serialised properly
+          // std::getline(ss, temp, ',');
+          // mem_size = std::stoull(temp);
+          mem_size = 1;
 
           trace.push_back(
               trace_elem(valid, load, tuid, dep, seqNum, effSeqNum, mem_addr, mem_size));
@@ -177,9 +179,9 @@ std::vector<trace_elem> trace;
   std::unordered_map<uint64_t, uint64_t> pairCache;
   std::unordered_map<uint64_t, std::unordered_map<uint64_t,double>> pairCounts;
 
-  void traverse(float weight){
+  void traverse(float weight, uint64_t warmup){
 
-      for(auto i =  trace.begin(); i != trace.end(); i++){
+      for(auto i = trace.begin(); i != trace.end(); i++){
 
           trace_elem elem = *i;
 
@@ -193,7 +195,7 @@ std::vector<trace_elem> trace;
               }
 
           //Normal load
-          } else if(elem.load && elem.valid){
+          } else if(elem.load && elem.valid && elem.effSeqNum > warmup){
                 
                 //Log seq distance 
                 std::set<uint64_t> seq_dist_set;
@@ -253,9 +255,9 @@ std::vector<trace_elem> trace;
                   if (pairCache.contains(elem.mem_addr + i))
                       pc_set.insert(pairCache[elem.mem_addr + i]);
                   else
-                      pc_set.insert(0);
+                      pc_set.insert(1);
                 }
-
+                
                 for (auto pc_set_elem : pc_set){
                   if (pairCounts[elem.tuid.pc].contains(pc_set_elem))
                       pairCounts[elem.tuid.pc][pc_set_elem] += weight;
@@ -269,11 +271,10 @@ std::vector<trace_elem> trace;
 
           } 
       }
-
   }
 
 //Please don't mangle my symbols so that I can call you from python 👉👈
-extern "C"{
+extern "C" {
   char* get_seq_dists(){
     std::string out = "";
 
@@ -316,13 +317,13 @@ extern "C"{
   char* get_takenness(){
     //Initialize histogram
     const uint32_t histogram_bins = 40;
-    std::vector<uint64_t> histogram(histogram_bins, 0);
+    std::vector<float> histogram(histogram_bins, 0);
 
     //Iterate over outer map
     for(auto outer : pairCounts){
 
         //Calculate sum of inner map
-        uint64_t inner_sum = 0;
+        double inner_sum = 0;
         for(auto inner : outer.second){
             inner_sum += inner.second;
         }
@@ -330,8 +331,9 @@ extern "C"{
         //Add takenness to histogram
         for(auto inner : outer.second){
             float takenness = float(inner.second) / float(inner_sum);
+
             int hist_idx = takenness * histogram_bins;
-            histogram[hist_idx]++;
+            histogram[hist_idx] += inner.second;
         }
     }
 
@@ -386,7 +388,7 @@ extern "C"{
 
   }
 
-  void calculate_statistics(char const* trace_path, float weight){
+  void calculate_statistics(char const* trace_path, float weight, uint32_t warmup){
       boost::iostreams::filtering_istream infile;
       infile.push(boost::iostreams::zstd_decompressor());
       infile.push(boost::iostreams::file_source(trace_path));
@@ -394,20 +396,22 @@ extern "C"{
     //Chunk loading and processing
     //while (infile.peek() != EOF){
     while (!infile.eof()){
-        printf("Back to loading\n");
+        //printf("Back to loading\n");
         load_trace(infile, 1000000);
-        printf("Back to traversing\n");
-        traverse(weight);
+        //printf("Back to traversing\n");
+        traverse(weight, warmup);
         trace.clear();
     }
-
-    // infile.close();
   }
 }
 
 int main(){
     //Load trace from file
     printf("Running main\n");
-    calculate_statistics("/home/michal/Downloads/sha100k.csv.zst", 1.0f);
-    printf("%s", get_branch_dists());
+    clear_all();
+    clear_caches();
+    calculate_statistics("/home/michal/Desktop/windows/FYP/spec_2017_rate_trace/557.xz_r/0/0/full_trace.csv.zst", 0.153887, 1000000);
+    clear_caches();
+    calculate_statistics("/home/michal/Desktop/windows/FYP/spec_2017_rate_trace/557.xz_r/0/1/full_trace.csv.zst", 0.00309807, 1000000);
+    printf("%s", get_takenness());
 }
