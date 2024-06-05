@@ -27,7 +27,7 @@ parser.add_argument('--warmup',
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_oracle",
+                default="/home/michal/Desktop/gem5_develop",
                 help='Path gem5 directory')
 
 parser.add_argument('--checkpointdir',
