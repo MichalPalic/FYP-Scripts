@@ -4,6 +4,11 @@
 #This script should be run with an updated spec executable location after checkpoints are extracted.
 #Note that it looks for a specific path in the checkpoints, so it will have no effect if run a second time
 
+#Second thing to fix are 2 mangled simpoints
+#spec_2017_rate_checkpoints/500.perlbench_r/2/checkpoints/cpt.simpoint_00_inst_219000000_weight_0.000810_interval_10000000_warmup_1000000/m5.cpt (Fd entry 1008)
+and
+#spec_2017_rate_checkpoints/541.leela_r/0/checkpoints/cpt.simpoint_00_inst_529000000_weight_0.000418_interval_10000000_warmup_1000000/m5.cpt  (Fd entry 1005)
+
 import argparse
 import os
 import glob

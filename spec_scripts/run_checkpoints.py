@@ -150,7 +150,7 @@ for checkpoint_path in checkpoint_paths:
                     '--l1d_size=256KiB',
                     '--l1i_size=256KiB',
                     '--l2_size=4MB',
-                    f"--lsq-dep-check-shift={1 if args.refine_trace else 4}"
+                    f"--lsq-dep-check-shift={1}"
                     ])
 
     
