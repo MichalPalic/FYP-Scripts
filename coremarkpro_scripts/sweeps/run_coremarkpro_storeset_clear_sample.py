@@ -5,7 +5,7 @@ import argparse
 import os
 import sys
 import glob
-from ..workload_coremarkpro import *
+from workload_coremarkpro import *
 import multiprocessing
 import subprocess
 

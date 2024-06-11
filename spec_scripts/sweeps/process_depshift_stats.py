@@ -98,7 +98,7 @@ total_mem_ord_violations = [x / float(ref_mem_ord_violations) for x in total_mem
 out = ""
 for perf in total_cycles:
     out += ' & ' + str('%.2f' % ((perf-1)* 100))
-print(f"{benchmark} {out} \\\\")
+print(f"Total {out} \\\\")
 
 #Dump total graph
 x = list(range(9))
