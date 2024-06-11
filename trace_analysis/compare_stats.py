@@ -35,12 +35,18 @@ def aggregate_stat(res_dir, checkpoint_dir, statname):
 
                 with open(stat_path, 'r') as stat_file:
                     lines = stat_file.readlines()
+                    #To read the actual warmed up stat only
+                    break_val = 1
                     for line in lines:
                         if statname in line:
-                            linesplit = line.split(' ')
-                            linesplitclean = [x for x in linesplit if x != '']
-                            stat_value = float(linesplitclean[1])
-                            break
+                            if break_val == 2:
+                                linesplit = line.split(' ')
+                                linesplitclean = [x for x in linesplit if x != '']
+                                stat_value = float(linesplitclean[1])
+                                break
+                            else:
+                                break_val += 1
+                                continue
 
                 if spec_benchmark in stat_dict:
                     stat_dict[spec_benchmark] += weight * stat_value
@@ -50,7 +56,7 @@ def aggregate_stat(res_dir, checkpoint_dir, statname):
     return stat_dict
 
 
-baseline_dir = "/home/michal/Desktop/windows/FYP/spec_2017_rate_results_depshift_1"
+baseline_dir = "/home/michal/Desktop/windows/FYP/spec_2017_rate_results"
 new_dir  = "/home/michal/Desktop/windows/FYP/spec_2017_rate_results_r4"
 checkpoint_dir = "/home/michal/Desktop/spec_2017_rate_checkpoints"
 

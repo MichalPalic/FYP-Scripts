@@ -10,6 +10,7 @@
 #include <vector>
 #include <cassert>
 #include <string.h>
+#include <bitset>
 
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -178,6 +179,16 @@ std::vector<trace_elem> trace;
   //Backwards address cache address -> PC
   std::unordered_map<uint64_t, uint64_t> pairCache;
   std::unordered_map<uint64_t, std::unordered_map<uint64_t,double>> pairCounts;
+
+  //Path count
+  const u_int32_t branch_hist_size = 1024;
+  std::bitset<branch_hist_size> global_branch_hist = 0;
+  std::unordered_map<uint64_t, std::unordered_map<std::bitset<branch_hist_size> ,double>> pairCounts;
+
+  class MDP_path {
+    
+
+  }
 
   void traverse(float weight, uint64_t warmup){
 
