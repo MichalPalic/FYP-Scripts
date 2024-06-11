@@ -50,8 +50,8 @@ def aggregate_stat(res_dir, checkpoint_dir, statname):
     return stat_dict
 
 
-baseline_dir = "/home/michal/Desktop/windows/FYP/spec_2017_rate_results"
-new_dir  = "/home/michal/Desktop/windows/FYP/spec_2017_rate_results_r1"
+baseline_dir = "/home/michal/Desktop/windows/FYP/spec_2017_rate_results_depshift_1"
+new_dir  = "/home/michal/Desktop/windows/FYP/spec_2017_rate_results_r4"
 checkpoint_dir = "/home/michal/Desktop/spec_2017_rate_checkpoints"
 
 stat_name = "simTicks"
@@ -86,7 +86,7 @@ plt.xticks(rotation=90)
 plt.subplots_adjust(bottom=0.2) 
 
 # Showing the plot
-plt.savefig(f'figures/perf_improvement.png', dpi=300)
+plt.savefig(f'trace_analysis/figures/perf_improvement.png', dpi=300)
 plt.show(block=True)
 
 print("Got here")

@@ -37,7 +37,7 @@ parser.add_argument('--checkpointdir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_results",
+                default="/home/michal/Desktop/spec_2017_rate_sweep_clear_4096",
                 help='Path to result directory')
 
 parser.add_argument('--specexedir',
@@ -73,7 +73,7 @@ parser.add_argument('--refine-trace',
 
 parser.add_argument('--trace-dir',
                 type=str,
-                default="/home/michal/Desktop/windows/FYP/spec_2017_rate_trace",
+                default="/home/michal/Desktop/spec_2017_rate_trace",
                 help='Directory containing/to to contain trace')
 
 args = parser.parse_args()
@@ -89,75 +89,79 @@ commands = []
 checkpoint_paths = glob.glob(args.checkpointdir + "/**/m5.cpt", recursive=True)
 
 #Emit command for each checkpoint
-for checkpoint_path in checkpoint_paths:
+for clearmult in [0.125, 0.25, 0.5, 1, 2, 4, 8]:
+    for checkpoint_path in checkpoint_paths:
 
-    spec_name = checkpoint_path.split('/')[-5]
-    spec_short_name = spec_name.split('.')[-1]
-    spec_idx = int(checkpoint_path.split('/')[-4])
-    checkpoint_idx = int(checkpoint_path.split('/')[-2].split('_')[1])
+        spec_name = checkpoint_path.split('/')[-5]
+        spec_short_name = spec_name.split('.')[-1]
+        spec_idx = int(checkpoint_path.split('/')[-4])
+        checkpoint_idx = int(checkpoint_path.split('/')[-2].split('_')[1])
 
-    checkpoint_dir ='/'.join(checkpoint_path.split('/')[:-2])
-    result_dir = f"{args.resultdir}/{spec_name}/{spec_idx}/{checkpoint_idx}"
+        checkpoint_dir ='/'.join(checkpoint_path.split('/')[:-2])
+        result_dir = f"{args.resultdir}/{clearmult}/{spec_name}/{spec_idx}/{checkpoint_idx}"
 
-    if not os.path.exists(result_dir):
-        os.makedirs(result_dir)
+        if not os.path.exists(result_dir):
+            os.makedirs(result_dir)
 
-    trace_dir = f"{args.trace_dir}/{spec_name}/{spec_idx}/{checkpoint_idx}"
-    if (args.gen_trace or args.refine_trace) and not os.path.exists(trace_dir):
-        os.makedirs(trace_dir)
+        trace_dir = f"{args.trace_dir}/{spec_name}/{spec_idx}/{checkpoint_idx}"
+        if (args.gen_trace or args.refine_trace) and not os.path.exists(trace_dir):
+            os.makedirs(trace_dir)
 
-    spec_exe_path = f'{args.specexedir}/{spec_name}/{spec_short_name}_base.mytest-m64'
-    spec_exe_dir = f'{args.specexedir}/{spec_name}'
-    benchopts = ' '.join(workloads[spec_name].args[spec_idx])
+        spec_exe_path = f'{args.specexedir}/{spec_name}/{spec_short_name}_base.mytest-m64'
+        spec_exe_dir = f'{args.specexedir}/{spec_name}'
+        benchopts = ' '.join(workloads[spec_name].args[spec_idx])
 
-    #Skip skip run if already complete
-    if os.path.exists(result_dir + '/run.done'):
-        with open(result_dir + '/run.done', 'r') as exitcode:
-            if int(exitcode.read().strip()) == 0:
-                print(f'Skipped {result_dir} (run.done exists with 0 exit code)')
-                continue
+        #Skip skip run if already complete
+        if os.path.exists(result_dir + '/run.done'):
+            with open(result_dir + '/run.done', 'r') as exitcode:
+                if int(exitcode.read().strip()) == 0:
+                    print(f'Skipped {result_dir} (run.done exists with 0 exit code)')
+                    continue
 
 
-    if workloads[spec_name].std_inputs is not None:
-        benchinfile = workloads[spec_name].std_inputs[spec_idx]
-    else:
-        benchinfile = None
+        if workloads[spec_name].std_inputs is not None:
+            benchinfile = workloads[spec_name].std_inputs[spec_idx]
+        else:
+            benchinfile = None
 
-    command = []
-    command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
-                    else '.fast'), 
-                    f'--outdir={result_dir}',
+        command = []
+        command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
+                        else '.fast'), 
+                        f'--outdir={result_dir}',
 
-                    f'{args.gem5dir}/configs/deprecated/example/se.py',
+                        f'{args.gem5dir}/configs/deprecated/example/se.py',
 
-                    #Checkpoint bs
-                    '--restore-simpoint-checkpoint',
-                    f'--checkpoint-restore={checkpoint_idx + 1}',
-                    f'--checkpoint-dir={checkpoint_dir}',
-                    '--restore-with-cpu=X86AtomicSimpleCPU',
-                    
-                    #Workload
-                    f'--cmd={spec_exe_path}',
-                    f'--options={benchopts}',
-                    f'--mem-type=DDR3_1600_8x8',
-                    f'--mem-size={args.memsize}GB',
-                    f'--mem-channels={2}',
+                        #Checkpoint bs
+                        '--restore-simpoint-checkpoint',
+                        f'--checkpoint-restore={checkpoint_idx + 1}',
+                        f'--checkpoint-dir={checkpoint_dir}',
+                        '--restore-with-cpu=X86AtomicSimpleCPU',
+                        
+                        #Workload
+                        f'--cmd={spec_exe_path}',
+                        f'--options={benchopts}',
+                        f'--mem-type=DDR3_1600_8x8',
+                        f'--mem-size={args.memsize}GB',
+                        f'--mem-channels={2}',
 
-                    #Luke XL params
-                    '--cpu-type=X86O3CPU',
-                    '--caches',
-                    '--l2cache',
-                    '--l1d_size=256KiB',
-                    '--l1i_size=256KiB',
-                    '--l2_size=4MB',
-                    f"--lsq-dep-check-shift={0}"
-                    ])
+                        #Luke XL params
+                        '--cpu-type=X86O3CPU',
+                        '--caches',
+                        '--l2cache',
+                        '--l1d_size=256KiB',
+                        '--l1i_size=256KiB',
+                        '--l2_size=4MB',
+                        f"--lfst-size={4096}",
+                        f"--ssit-size={4096}",
+                        f"--store-set-clear-period={int ( float(1000000) * clearmult)}",
+                        f"--lsq-dep-check-shift={4}"
+                        ])
 
-    
-    if benchinfile is not None:
-        command.extend(['--input', benchinfile])
+        
+        if benchinfile is not None:
+            command.extend(['--input', benchinfile])
 
-    commands.append((result_dir, spec_exe_dir, trace_dir, command))
+        commands.append((result_dir, spec_exe_dir, trace_dir, command))
 
 #Function for single blocking program call
 def run_command(command_tuple):

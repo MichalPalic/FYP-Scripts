@@ -89,7 +89,7 @@ commands = []
 checkpoint_paths = glob.glob(args.checkpointdir + "/**/m5.cpt", recursive=True)
 
 #Emit command for each checkpoint
-for depshift in [0, 1, 2, 3, 4, 5, 6 ,7, 8, 9]:
+for depshift in [0, 1, 2, 3, 4, 5, 6 ,7, 8]:
     for checkpoint_path in checkpoint_paths:
 
         spec_name = checkpoint_path.split('/')[-5]
