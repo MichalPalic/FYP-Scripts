@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--gem5dir',
                 type=str,
-                default="/home/michal/Desktop/gem5_stable",
+                default="/home/michal/Desktop/gem5_oracle",
                 help='Path to gem5 executable to be used')
 
 parser.add_argument('--coremarkprodir',
@@ -26,8 +26,13 @@ parser.add_argument('--coremarkprodir',
 
 parser.add_argument('--resultdir',
                 type=str,
-                default="/home/michal/Desktop/coremarkpro_trace",
+                default="/home/michal/Desktop/windows/FYP/coremarkpro_trace_result",
                 help='Path to input/output directory')
+
+parser.add_argument('--trace_dir',
+                type=str,
+                default="/home/michal/Desktop/windows/FYP/coremarkpro_trace",
+                help='Directory containing/to to contain trace')
 
 parser.add_argument('-j', '--jobs',
                 type=int,
@@ -43,11 +48,6 @@ parser.add_argument('--run_trace',
                 action='store_true',
                 default=False,
                 help='Use trace to run workload with oracle')
-
-parser.add_argument('--trace_dir',
-                type=str,
-                default="/home/michal/Desktop/coremarkpro_trace",
-                help='Directory containing/to to contain trace')
 
 parser.add_argument('--debug',
                 action='store_true',
@@ -97,7 +97,7 @@ for workload_name in workloads:
     command.extend([f'{args.gem5dir}/build/X86/gem5' + ('.debug' if args.debug
                     else '.opt'), f'--outdir={result_dir}',
                     #"--debug-flags=FYPDebug,MemOracle",
-                    f'{args.gem5dir}/configs/example/se.py',
+                    f'{args.gem5dir}/configs/deprecated/example/se.py',
                     '-c', f'{workload_path}',
                     f'--options={benchopts}',
                     f'--mem-size=8GB',

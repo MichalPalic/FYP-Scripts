@@ -27,7 +27,7 @@ get_takenness = cpplibrary.get_takenness
 get_takenness.restype = ctypes.POINTER(ctypes.c_char_p)
 
 
-calculate_statistics(b'/home/michal/Downloads/sha1M.csv')
+calculate_statistics(b'/home/michal/Downloads/sha100k.csv.zst')
 #calculate_statistics(b'/home/michal/Desktop/coremarkpro_trace/radix2/full_trace.csv')
 
 #Plot eff seq number dists

@@ -4,7 +4,7 @@ import sys
 from workload_spec import *
 import multiprocessing
 import subprocess
-
+from datetime import datetime
 
 parser = argparse.ArgumentParser(
                 prog='Valgrind BBV Config Script',
@@ -105,7 +105,9 @@ for folder in folders:
 def run_command(command_tuple):
     programdir, outdir, inpath, command = command_tuple
 
-    print(f"Running {outdir}")
+    current_datetime = datetime.now()
+
+    print(f"{current_datetime.timestamp()}: Running {outdir}")
 
     os.chdir(programdir)
     with open(outdir + "/bb.log", 'w+') as log:
@@ -123,7 +125,7 @@ def run_command(command_tuple):
     with open(outdir + "/bb.done", 'w+') as statusf:
         statusf.write(str(p_status))
 
-    print(f"Finished {outdir} with exit code {p_status}")
+    print(f"{current_datetime.timestamp()}: Finished {outdir} with exit code {p_status}")
 
         
 #Execute commands in parallel

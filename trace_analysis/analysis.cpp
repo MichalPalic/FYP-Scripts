@@ -2,6 +2,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -9,6 +10,12 @@
 #include <vector>
 #include <cassert>
 #include <string.h>
+
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/zstd.hpp>
+#include <iostream>
+#include <string>
 
 //Common helper classes
 //Setup to allow TraceUID to be used as hashmap key
@@ -56,6 +63,7 @@ struct trace_elem
     uint64_t seqNum;
     uint64_t effSeqNum;
     uint64_t mem_addr;
+    uint32_t mem_size;
 
   trace_elem(){}
   trace_elem( 
@@ -65,24 +73,25 @@ struct trace_elem
     TraceUID _dep,
     uint64_t _seqNum,
     uint64_t _effSeqNum,
-    uint64_t _mem_addr): 
+    uint64_t _mem_addr,
+    uint64_t _mem_size): 
     valid(_valid), load(_load), tuid(_tuid), dep(_dep), seqNum(_seqNum), 
-    effSeqNum(_effSeqNum), mem_addr(_mem_addr){}
+    effSeqNum(_effSeqNum), mem_addr(_mem_addr), mem_size(_mem_size){}
 };
 
   //Tuple holds bool:  Valid (bool), Load(true)/store(false),
   //this pc/access_number, pc/access_number dependent, sequence_number,
-  //eff_sequence_number mem_addr
+  //eff_sequence_number, mem_addr, access size (Bytes)
 
 // using full_trace_T = std::tuple<bool, bool, TraceUID, TraceUID, uint64_t,
 //       uint64_t, uint64_t>;
 
 std::vector<trace_elem> trace;
 
-  void load_trace(std::fstream& infile, uint64_t n){
+  void load_trace(boost::iostreams::filtering_istream& infile, uint64_t n){
       std::string line;
 
-      if (!infile.is_open()){
+      if (infile.fail()){
           printf("Failed to open mem trace path \n");
           return;
       }
@@ -102,6 +111,7 @@ std::vector<trace_elem> trace;
           uint64_t seqNum;
           uint64_t effSeqNum;
           uint64_t mem_addr;
+          uint64_t mem_size;
 
           uint64_t pc,n_visited;
 
@@ -139,119 +149,132 @@ std::vector<trace_elem> trace;
           std::getline(ss, temp, ',');
           mem_addr = std::stoull(temp);
 
+          //This is bugged rn, the trace does not get serialised properly
+          // std::getline(ss, temp, ',');
+          // mem_size = std::stoull(temp);
+          mem_size = 1;
+
           trace.push_back(
-              trace_elem(valid, load, tuid, dep, seqNum, effSeqNum, mem_addr>>4));
+              trace_elem(valid, load, tuid, dep, seqNum, effSeqNum, mem_addr, mem_size));
 
           line_n++;
       }
   };
 
   //Address to seqnum distance
-  std::map<uint64_t, uint64_t> seqDist;
+  std::map<uint64_t, double> seqDist;
   std::unordered_map<uint64_t, uint64_t> seqDistCache;
 
   //Address to effective seqnum distance
-  std::map<uint64_t, uint64_t> effSeqDist;
+  std::map<uint64_t, double> effSeqDist;
   std::unordered_map<uint64_t, uint64_t> effSeqDistCache;
 
   //Address to effective seqnum distance
   uint64_t global_branch_n;
-  std::map<uint64_t, uint64_t> branchDist;
+  std::map<uint64_t, double> branchDist;
   std::unordered_map<uint64_t, uint64_t> branchDistCache;
 
   //Pc -> Pc + count relation
   //Backwards address cache address -> PC
   std::unordered_map<uint64_t, uint64_t> pairCache;
-  std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>> pairCounts;
+  std::unordered_map<uint64_t, std::unordered_map<uint64_t,double>> pairCounts;
 
-  void traverse(){
+  void traverse(float weight, uint64_t warmup){
 
-      for(auto i =  trace.begin(); i != trace.end(); i++){
+      for(auto i = trace.begin(); i != trace.end(); i++){
 
           trace_elem elem = *i;
 
           //Normal store
           if(!elem.load){
-              seqDistCache[elem.mem_addr] = elem.seqNum;
-              effSeqDistCache[elem.mem_addr] = elem.effSeqNum;
-
-              branchDistCache[elem.mem_addr] = global_branch_n; 
-              pairCache[elem.mem_addr] = elem.tuid.pc;
-
+              for (uint32_t i = 0; i < elem.mem_size; i++){
+                seqDistCache[elem.mem_addr + i] = elem.seqNum;
+                effSeqDistCache[elem.mem_addr + i] = elem.effSeqNum;
+                branchDistCache[elem.mem_addr + i] = global_branch_n; 
+                pairCache[elem.mem_addr + i] = elem.tuid.pc;
+              }
 
           //Normal load
-          } else if(elem.load && elem.valid){
+          } else if(elem.load && elem.valid && elem.effSeqNum > warmup){
                 
                 //Log seq distance 
-                uint64_t distance = 0;
-                if (seqDistCache.contains(elem.mem_addr))
-                    distance = elem.seqNum - seqDistCache[elem.mem_addr];
-                else 
-                    distance = 0;
-                
-                if (seqDist.contains(distance))
-                    seqDist[distance]++;
-                else
-                    seqDist[distance] = 1;
+                std::set<uint64_t> seq_dist_set;
+
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                  if (seqDistCache.contains(elem.mem_addr + i))
+                      seq_dist_set.insert(elem.seqNum - seqDistCache[elem.mem_addr + i]);
+                  else 
+                      seq_dist_set.insert(0);
+                }
+
+                for (auto seq_dist_elem : seq_dist_set){
+                    if (seqDist.contains(seq_dist_elem))
+                        seqDist[seq_dist_elem] += weight;
+                    else
+                        seqDist[seq_dist_elem] = weight;
+                }
 
                 //Log eff seq distance 
-                if (effSeqDistCache.contains(elem.mem_addr))
-                    distance = elem.effSeqNum - effSeqDistCache[elem.mem_addr];
-                else 
-                    distance = 0;
-                
-                if (effSeqDist.contains(distance))
-                    effSeqDist[distance]++;
-                else
-                    effSeqDist[distance] = 1;
+                std::set<uint64_t> eff_seq_dist_set;
 
-                //Log eff seq distance 
-                if (effSeqDistCache.contains(elem.mem_addr))
-                    distance = elem.effSeqNum - effSeqDistCache[elem.mem_addr];
-                else 
-                    distance = 0;
-                
-                if (effSeqDist.contains(distance))
-                    effSeqDist[distance]++;
-                else
-                    effSeqDist[distance] = 1;
-                
-                //Log branch distance 
-                if (branchDistCache.contains(elem.mem_addr))
-                    distance = global_branch_n - branchDistCache[elem.mem_addr];
-                else 
-                    distance = uint64_t(-1);
-                
-                if (branchDist.contains(distance))
-                    branchDist[distance]++;
-                else
-                    branchDist[distance] = 1;
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                  if (effSeqDistCache.contains(elem.mem_addr + i))
+                      eff_seq_dist_set.insert(elem.effSeqNum - effSeqDistCache[elem.mem_addr + i]);
+                  else 
+                      eff_seq_dist_set.insert(0);
+                }
 
-                uint64_t pc = 0;
-                if (pairCache.contains(elem.mem_addr))
-                    pc = pairCache[elem.mem_addr];
-                else
-                    pc = 0;
-        
-                if (pairCounts[elem.tuid.pc].contains(pc))
-                    pairCounts[elem.tuid.pc][pc] ++;
-                else
-                    pairCounts[elem.tuid.pc][pc] = 1;
+                for (auto eff_seq_dist_elem : eff_seq_dist_set){
+                    if (effSeqDist.contains(eff_seq_dist_elem))
+                        effSeqDist[eff_seq_dist_elem] += weight;
+                    else
+                        effSeqDist[eff_seq_dist_elem] = weight;
+                }
+
+                //Log branch distance
+                std::set<uint64_t> branch_dist_set;
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                                                   
+                    if (branchDistCache.contains(elem.mem_addr + i))
+                        branch_dist_set.insert(global_branch_n - branchDistCache[elem.mem_addr + i]);
+                    else 
+                        branch_dist_set.insert(uint64_t(-1));
+                }
+
+                for (auto branch_dist_elem : branch_dist_set){
+                  if (branchDist.contains(branch_dist_elem))
+                      branchDist[branch_dist_elem] += weight;
+                  else
+                      branchDist[branch_dist_elem] = weight;
+
+                }
+ 
+                // Log cache pairs
+                std::set<uint64_t> pc_set;
+                for (uint32_t i = 0; i < elem.mem_size; i++){
+                  if (pairCache.contains(elem.mem_addr + i))
+                      pc_set.insert(pairCache[elem.mem_addr + i]);
+                  else
+                      pc_set.insert(1);
+                }
+                
+                for (auto pc_set_elem : pc_set){
+                  if (pairCounts[elem.tuid.pc].contains(pc_set_elem))
+                      pairCounts[elem.tuid.pc][pc_set_elem] += weight;
+                  else
+                      pairCounts[elem.tuid.pc][pc_set_elem] = weight;
+                }
 
           //Branch 
           } else if (elem.load && !elem.valid){
             global_branch_n++;
 
-          } else {
-            assert(false);
-          }
-
+          } 
       }
-
   }
 
 //Please don't mangle my symbols so that I can call you from python 👉👈
-extern "C"{
+extern "C" {
   char* get_seq_dists(){
     std::string out = "";
 
@@ -294,13 +317,13 @@ extern "C"{
   char* get_takenness(){
     //Initialize histogram
     const uint32_t histogram_bins = 40;
-    std::vector<uint64_t> histogram(histogram_bins, 0);
+    std::vector<float> histogram(histogram_bins, 0);
 
     //Iterate over outer map
     for(auto outer : pairCounts){
 
         //Calculate sum of inner map
-        uint64_t inner_sum = 0;
+        double inner_sum = 0;
         for(auto inner : outer.second){
             inner_sum += inner.second;
         }
@@ -308,8 +331,9 @@ extern "C"{
         //Add takenness to histogram
         for(auto inner : outer.second){
             float takenness = float(inner.second) / float(inner_sum);
+
             int hist_idx = takenness * histogram_bins;
-            histogram[hist_idx]++;
+            histogram[hist_idx] += inner.second;
         }
     }
 
@@ -364,27 +388,30 @@ extern "C"{
 
   }
 
-  void calculate_statistics(char const* trace_path){
-    std::fstream infile;
-    infile.open(trace_path, std::ios::in);
-    assert(infile.is_open());
+  void calculate_statistics(char const* trace_path, float weight, uint32_t warmup){
+      boost::iostreams::filtering_istream infile;
+      infile.push(boost::iostreams::zstd_decompressor());
+      infile.push(boost::iostreams::file_source(trace_path));
 
     //Chunk loading and processing
-    while (infile.peek() != EOF){
-        printf("Back to loading\n");
+    //while (infile.peek() != EOF){
+    while (!infile.eof()){
+        //printf("Back to loading\n");
         load_trace(infile, 1000000);
-        printf("Back to traversing\n");
-        traverse();
+        //printf("Back to traversing\n");
+        traverse(weight, warmup);
         trace.clear();
     }
-
-    infile.close();
   }
 }
 
 int main(){
     //Load trace from file
     printf("Running main\n");
-    calculate_statistics("/home/michal/Downloads/sha_full_trace.csv");
-    printf("%s", get_branch_dists());
+    clear_all();
+    clear_caches();
+    calculate_statistics("/home/michal/Desktop/windows/FYP/spec_2017_rate_trace/557.xz_r/0/0/full_trace.csv.zst", 0.153887, 1000000);
+    clear_caches();
+    calculate_statistics("/home/michal/Desktop/windows/FYP/spec_2017_rate_trace/557.xz_r/0/1/full_trace.csv.zst", 0.00309807, 1000000);
+    printf("%s", get_takenness());
 }
