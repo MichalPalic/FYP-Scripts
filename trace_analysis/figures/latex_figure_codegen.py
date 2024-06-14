@@ -16,23 +16,28 @@ for figpath in figpaths:
              \\centering
             \\begin{{subfigure}}[b]{{0.49\\textwidth}}
                 \\centering
-                \\includegraphics[width=\\textwidth]{{appendix/figures/figures/{specname}_r_eff_seq_dist.png}}
-                \\caption{{Distribution of Store->Load pairs as a function of uOP distance}}
+                \\includegraphics[width=\\textwidth]{{appendix/figures/figures/characterisation/{specname}_r_eff_seq_dist.png}}
+                \\caption{{\small Store->load pairs by commit distance}}
             \\end{{subfigure}}
             \\hfill
             \\begin{{subfigure}}[b]{{0.49\\textwidth}}
                 \\centering
-                \\includegraphics[width=\\textwidth]{{appendix/figures/figures/{specname}_r_branch_dist.png}}
-                \\caption{{Distribution of Store->Load pairs as a function of number of separating branches}}
+                \\includegraphics[width=\\textwidth]{{appendix/figures/figures/characterisation/{specname}_r_branch_dist.png}}
+                \\caption{{\small Store->load pairs by separating branches}}
             \\end{{subfigure}}
-
             \\begin{{subfigure}}[b]{{0.49\\textwidth}}
                 \\centering
-                \\includegraphics[width=\\textwidth]{{appendix/figures/figures/{specname}_r_mdp_takenness.png}}
-                \\caption{{Distribution of Store->Load pair frequency (Takenness)}}
+                \\includegraphics[width=\\textwidth]{{appendix/figures/figures/characterisation/{specname}_r_mdp_takenness.png}}
+                \\caption{{\small Store->load pair takenness}}
             \\end{{subfigure}}
-                \\caption{{Simpoint aggregate {specname} memory dependence metrics}}
-                \\label{{fig:three graphs}}
+            \\hfill
+            \\begin{{subfigure}}[b]{{0.49\\textwidth}}
+                \\centering
+                \\includegraphics[width=\\textwidth]{{appendix/figures/figures/characterisation/{specname}_r_path_dist.png}}
+                \\caption{{\small Store->load pairs by path count}}
+            \\end{{subfigure}}
+
+                \\caption{{{specname} memory dependence metrics estimate}}
         \\end{{figure}}
     """
     )
