@@ -181,14 +181,56 @@ std::vector<trace_elem> trace;
   std::unordered_map<uint64_t, std::unordered_map<uint64_t,double>> pairCounts;
 
   //Path count
-  const u_int32_t branch_hist_size = 1024;
-  std::bitset<branch_hist_size> global_branch_hist = 0;
-  std::unordered_map<uint64_t, std::unordered_map<std::bitset<branch_hist_size> ,double>> pairCounts;
+  const u_int32_t branch_hist_size = 64;
+  uint64_t global_branch_hist = 0;
 
-  class MDP_path {
+  //Thanks 
+  //https://stackoverflow.com/questions/21245139/fastest-way-to-compare-bitsets-operator-on-bitsets
+  template<std::size_t N>
+    bool operator<(const std::bitset<N>& x, const std::bitset<N>& y)
+    {
+        for (int i = N-1; i >= 0; i--) {
+            if (x[i] ^ y[i]) return y[i];
+        }
+        return false;
+    }
+
+  class mdp_path {
+    public:
+    uint32_t path_length;
+    uint64_t branch_hist;
     
+    mdp_path(): path_length(0), branch_hist(0){}
 
+   bool operator==(const mdp_path &other) const
+  {
+    return (path_length == other.path_length 
+      && (branch_hist << (64- path_length))
+      == (other.branch_hist << (64- other.path_length)));
   }
+
+  bool operator<(const mdp_path &other) const
+  {
+    return path_length == other.path_length ? path_length < other.path_length :
+      (branch_hist << (64 - path_length)) 
+      < (other.branch_hist << (64 - other.path_length));
+  }
+
+  };
+
+  namespace std {
+    template <>
+    struct hash<mdp_path> {
+        size_t operator()(const mdp_path& path) const noexcept {
+           return (path.branch_hist << 
+                    (branch_hist_size - path.path_length)) 
+                    >> (branch_hist_size - path.path_length);
+    };
+  };
+}
+
+
+  std::unordered_map<uint64_t, std::unordered_map<mdp_path,double>> pathCounts;
 
   void traverse(float weight, uint64_t warmup){
 
@@ -276,9 +318,28 @@ std::vector<trace_elem> trace;
                       pairCounts[elem.tuid.pc][pc_set_elem] = weight;
                 }
 
+                // //Log cache pairs
+
+                // mdp_path p = mdp_path();
+                // p.branch_hist = global_branch_hist;
+                
+                // for (auto branch_dist_elem : branch_dist_set){
+                //   p.path_length = branch_dist_elem;
+                //   if (pathCounts[elem.tuid.pc].contains(p))
+                //     pathCounts[elem.tuid.pc][p] += weight;
+                //   else
+                //     pathCounts[elem.tuid.pc][p] = weight;
+
+                // }
+
           //Branch 
           } else if (elem.load && !elem.valid){
             global_branch_n++;
+
+            //Weird branch encoding, dep.pc stores predicted value and n_visited
+            //stores if it's a misprediction or not
+            // global_branch_hist = global_branch_hist << 1;
+            // global_branch_hist |= (elem.dep.pc ^ elem.dep.n_visited);
 
           } 
       }
@@ -359,6 +420,68 @@ extern "C" {
     return strdup(out.c_str());
   }
 
+    char* get_path_counts(){
+    uint32_t out_size = 1024;
+    std::vector<float> path_dist(out_size, 0);
+
+    //Iterate over outer map
+    for(auto outer : pathCounts){
+      if (outer.second.size() < out_size){
+        float path_sum = 0;
+        for (auto inner : outer.second){
+          path_sum += inner.second;
+        }
+        path_dist[outer.second.size()] += path_sum;
+      }
+    }
+
+    //Dump histogram to string
+    std::string out = "";
+
+    for ( auto p : path_dist){
+            out += std::to_string(p);
+            out +=',';
+    }
+
+    return strdup(out.c_str());
+  }
+
+    char* get_path_length_counts(){
+    uint32_t out_size = 1024;
+    std::vector<float> path_dist(out_size * 64, 0);
+
+    //Iterate over outer map
+    for(auto outer : pathCounts){
+      if (outer.second.size() < out_size){
+        uint32_t max_path_length = 0;
+        float total_weight = 0;
+        uint32_t path_count = outer.second.size();
+
+        for (auto inner : outer.second){
+          if(inner.first.path_length > max_path_length){
+            max_path_length = inner.first.path_length;
+          }
+          total_weight += inner.second;
+        }
+        if(max_path_length > 64) continue;
+
+        path_dist[64 * path_count + max_path_length] += total_weight;
+
+      }
+    }
+
+    //Dump histogram to string
+    std::string out = "";
+
+    for ( auto p : path_dist){
+            out += std::to_string(p);
+            out +=',';
+    }
+
+    return strdup(out.c_str());
+  }
+
+
   void clear_all(){
     trace.clear();
 
@@ -378,6 +501,9 @@ extern "C" {
     //Pc -> Pc + count relation
     pairCache.clear();
     pairCounts.clear();
+
+    pathCounts.clear();
+    global_branch_hist = 0;
 
   }
 
