@@ -41,7 +41,12 @@ parser.add_argument('-m', '--machines',
 
 parser.add_argument('-c', '--machine_idx',
                 type=int,
-                default=1,
+                default=0,
+                help='Index of machine')
+
+parser.add_argument('-cm', '--clear_machine_idx',
+                type=int,
+                default=0,
                 help='Index of machine')
 
 parser.add_argument('--debug',
@@ -61,7 +66,7 @@ ssitlist = [64, 512, 4096, 32768, 262144]
 lfstlist = [64, 512, 4096, 32768, 262144]
 
 clear_base = 1000000
-clear_mult_list = [0.125, 0.25, 0.5, 1, 2, 4, 8]
+clear_mult_list = [0.0078125, 0.015625, 0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]
     
 
 for idx, ssit in enumerate(ssitlist) :
@@ -69,7 +74,10 @@ for idx, ssit in enumerate(ssitlist) :
         continue
 
     for lfst in lfstlist:
-        for clear_mult in clear_mult_list:
+        for clear_idx, clear_mult in enumerate(clear_mult_list):
+            if clear_idx % 4 == args.clear_machine_idx:
+                continue
+
             clear_period = int(clear_base * float(clear_mult))
 
             #Emit command for each simpoint path
