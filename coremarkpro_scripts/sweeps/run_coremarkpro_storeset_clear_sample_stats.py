@@ -41,14 +41,18 @@ configs = list(set(configs))
 configs.sort()
 
 #Ssit, lfst, clear, sub-benchmarks
-cycles = np.zeros((5,5,7,9))
+cycles = np.zeros((5,5,11,9))
 cycle_name = "system.cpu.numCycles"
     
 for config in configs:
     ssit = (int(np.log2(int(config.split('_')[0]))) - 5 )// 3
     lfst = (int(np.log2(int(config.split('_')[1]))) - 5 )// 3
-    clear = int(np.log2(float(config.split('_')[2]) / 1000000 * 8))
+    clear = int(np.log2(float(config.split('_')[2]) / 1000000 * 128))
 
+    assert ssit >= 0
+    assert lfst >= 0
+    assert clear >= 0
+    
     bench_stat = aggregate_stat(f"{top_dir}/{config}", cycle_name)
 
     bench_names = list(bench_stat.keys())
