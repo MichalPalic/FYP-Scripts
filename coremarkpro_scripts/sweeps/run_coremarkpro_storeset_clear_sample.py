@@ -75,7 +75,7 @@ for idx, ssit in enumerate(ssitlist) :
 
     for lfst in lfstlist:
         for clear_idx, clear_mult in enumerate(clear_mult_list):
-            if clear_idx % 4 == args.clear_machine_idx:
+            if clear_idx % 4 != args.clear_machine_idx:
                 continue
 
             clear_period = int(clear_base * float(clear_mult))
