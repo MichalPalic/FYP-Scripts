@@ -58,19 +58,18 @@ def aggregate_stat(res_dir, checkpoint_dir, statname, occurence):
 result_dir = "/home/michal/Desktop/spec_2017_rate_sweep_depshift"
 checkpoint_dir = "/home/michal/Desktop/spec_2017_rate_checkpoints"
 
-stat_name = "simTicks"
 
 numCycles = []
 mem_ord_violations = []
 
 total_cycles =[]
-total_mem_ord_violations =[]
+total_mem_ord_violations = []
 
 for i in range(9):
     numCycles.append(aggregate_stat(
                     f"{result_dir}/{i}" ,
                     checkpoint_dir,
-                    "system.switch_cpus.numCycles", 2))
+                    "system.switch_cpus.ipc", 2))
     
     mem_ord_violations.append(aggregate_stat(
                     f"{result_dir}/{i}" ,
@@ -110,7 +109,7 @@ fig, ax1 = plt.subplots(figsize=(6, 3))
 # Create the first line (orange) on the left axis
 ax1.semilogx(x, total_cycles, color='orange', label='Line 1 (left axis)', marker='X', markersize=15)  # Added marker
 ax1.set_xlabel('Memory dependence check granularity [bytes]', fontsize=12)
-ax1.set_ylabel('Relative cycle count', color='orange', fontsize=14)
+ax1.set_ylabel('Instructions per clock', color='orange', fontsize=14)
 ax1.tick_params(axis='y', labelcolor='orange')
 
 # Calculate powers of 2 within the range of x
@@ -120,7 +119,7 @@ ax1.set_xticklabels([f"$2^{{{int(np.log2(i))}}}$" for i in powers_of_2])
 
 ax2 = ax1.twinx()  
 ax2.plot(x, total_mem_ord_violations, color='blue', label='Line 2 (right axis)', marker='X', markersize=15)  # Added marker
-ax2.set_ylabel('Relative memory \n violations', color='blue', fontsize=14 )
+ax2.set_ylabel('Memory \n violation count', color='blue', fontsize=14 )
 ax2.tick_params(axis='y', labelcolor='blue')
 
 # Add legends and show the plot
@@ -129,33 +128,29 @@ fig.tight_layout()
 plt.savefig(f'spec_scripts/sweeps/figures/depshift_total.png', dpi=300)
 #plt.show(block=True)
 
-
+y1_tot = [0,0,0,0,0,0,0,0,0]
 for benchmark in list(numCycles[0].keys()):
     x = list(range(9))
     x = [2 ** x for x in x]
     y1 = []
     y2 = []
-
+    
     for i, dict in enumerate(numCycles):
-        y1.append(numCycles[i][benchmark])
-        y2.append(mem_ord_violations[i][benchmark])
-
-    #Normalise
-    y1_norm = [(y)/y1[0] for y in y1]
-    y2_norm = [(y)/y2[0] for y in y2]
-
+        y1.append(numCycles[i][benchmark]/numCycles[0][benchmark])
+        y2.append(mem_ord_violations[i][benchmark]/mem_ord_violations[0][benchmark])
+        
     out = ""
-    for perf in y1_norm:
+    for i, perf in enumerate(y1):
         out += ' & ' + str('%.2f' % ((perf-1)* 100))
+        y1_tot[i] +=((perf-1)* 100)
     print(f"{benchmark} {out} \\\\")
-
     # Create a figure and a set of subplots with specified size
     fig, ax1 = plt.subplots(figsize=(6, 3))
 
     # Create the first line (orange) on the left axis
-    ax1.semilogx(x, y1_norm, color='orange', label='Line 1 (left axis)', marker='X', markersize=15)  # Added marker
+    ax1.semilogx(x, y1, color='orange', label='Line 1 (left axis)', marker='X', markersize=15)  # Added marker
     ax1.set_xlabel('Memory dependence check granularity [bytes]', fontsize=12)
-    ax1.set_ylabel('Relative cycle count', color='orange', fontsize=14)
+    ax1.set_ylabel('Instructions per clock', color='orange', fontsize=14)
     ax1.tick_params(axis='y', labelcolor='orange')
 
     # Calculate powers of 2 within the range of x
@@ -164,8 +159,8 @@ for benchmark in list(numCycles[0].keys()):
     ax1.set_xticklabels([f"$2^{{{int(np.log2(i))}}}$" for i in powers_of_2])
 
     ax2 = ax1.twinx()  
-    ax2.plot(x, y2_norm, color='blue', label='Line 2 (right axis)', marker='X', markersize=15)  # Added marker
-    ax2.set_ylabel('Relative memory \n violations', color='blue', fontsize=14 )
+    ax2.plot(x, y2, color='blue', label='Line 2 (right axis)', marker='X', markersize=15)  # Added marker
+    ax2.set_ylabel('Memory \n violation count', color='blue', fontsize=14 )
     ax2.tick_params(axis='y', labelcolor='blue')
 
     # Add legends and show the plot
@@ -175,3 +170,4 @@ for benchmark in list(numCycles[0].keys()):
     plt.close()
     #plt.show(block=False)
 
+print([y/23 for y in y1_tot])
