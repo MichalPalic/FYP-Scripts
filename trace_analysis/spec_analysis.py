@@ -35,13 +35,18 @@ clear_all = cpplibrary.clear_all
 clear_caches = cpplibrary.clear_caches
 
 #Control parameters
-fig_block = False
+fig_block = True
 fig_h = 4
 fig_w = 14
-max_val = 1025
-tick_space = 256
+max_val = 513
+tick_space = 128
 tick_space_hist = 5
 log_scale = False
+
+# Set global font sizes
+plt.rcParams['axes.labelsize'] = 17 
+plt.rcParams['xtick.labelsize'] = 17
+plt.rcParams['ytick.labelsize'] = 17 
 
 checkpoint_dir = "/home/michal/Desktop/spec_2017_rate_checkpoints"
 trace_dir = "/home/michal/Desktop/windows/FYP/spec_2017_rate_trace"
@@ -70,7 +75,7 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
     #Completely reset backend state between benchmarks
     clear_all()
 
-    # if bench_idx != 5:
+    # if not (bench_idx == 5 or bench_idx == 6):
     #     continue
 
     for weight_path in weight_paths:
@@ -93,7 +98,7 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
 
         for checkpoint_idx, weight in enumerate(weights):
 
-            # if checkpoint_idx >= 1:
+            # if checkpoint_idx >= 2:
             #     break
 
             #Break backend dependencies between checkpoints
@@ -138,19 +143,23 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
     positions = np.arange(max_val)
 
     plt.figure(figsize=(fig_w, fig_h))
-    plt.bar(positions, frequencies, color='blue', edgecolor='black')
-    plt.xlabel('Linear sequence number distance')
+    plt.bar(positions, frequencies, color='black', edgecolor='black')
+    plt.xlabel('Commit distance')
     plt.ylabel('Normalised frequency')
     plt.xticks(positions[::tick_space], labels[::tick_space])
     if log_scale:
         plt.yscale('log')
 
+    plt.tight_layout()
+
     try:
-        plt.savefig(f'trace_analysis/figures1024/{spec_benchmark}_eff_seq_dist.png', dpi=300)
+        plt.savefig(f'trace_analysis/figures{max_val-1}/{spec_benchmark}_eff_seq_dist.png', dpi=300)
     except:
         plt.show(block=fig_block)
         print("Failed to open figure path")
-    
+
+    plt.close()
+
     #Plot branch dists
     pystr = ctypes.c_char_p.from_buffer(get_branch_dists()).value.decode('utf-8')
     temp = pystr.split(',')[:-1]
@@ -159,9 +168,9 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
     branch_dists_sum = sum(branch_dists_counts)
     branch_dists_p = [float(x)/branch_dists_sum for x in branch_dists_counts]
 
-    frequencies = [0 for  i in range(max_val)]
-    for idx, dist in enumerate(branch_dists[:max_val]):
-        if dist < max_val:
+    frequencies = [0 for  i in range(max_val//2 +1)]
+    for idx, dist in enumerate(branch_dists[:max_val//2 +1]):
+        if dist < max_val//2 +1:
             frequencies[dist] = branch_dists_p[idx]
 
     branch_dists_cdf = [f"{i}:{sum(frequencies[:i])}" for i, x in enumerate(frequencies)]
@@ -177,28 +186,34 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
         branch_dists_p_aggregate = [x + frequencies[i]*branch_dists_sum for i,x in enumerate(branch_dists_p_aggregate)]
     branch_dists_p_aggregate_sum += branch_dists_sum
 
-    labels = [str(i) for i in range(0, max_val)]
-    positions = np.arange(max_val)
+    labels = [str(i) for i in range(0, max_val//2 +1)]
+    positions = np.arange(max_val//2 +1)
 
     plt.figure(figsize=(fig_w, fig_h))
-    plt.bar(positions, frequencies, color='blue', edgecolor='black')
+    plt.bar(positions, frequencies, color='black', edgecolor='black')
     plt.xlabel('Branch distance')
     plt.ylabel('Normalised frequency')
-    plt.xticks(positions[::tick_space], labels[::tick_space])
+    plt.xticks(positions[::tick_space//2], labels[::tick_space//2])
     if log_scale:
         plt.yscale('log')
     
+    plt.tight_layout()
+
     try:
-        plt.savefig(f'trace_analysis/figures1024/{spec_benchmark}_branch_dist.png', dpi=300)
+        plt.savefig(f'trace_analysis/figures{max_val-1}/{spec_benchmark}_branch_dist.png', dpi=300)
     except:
         plt.show(block=fig_block)
         print("Failed to open figure path")
+    plt.close()
 
     #Plot MDP takenness
     hist_str_list = ctypes.c_char_p.from_buffer(get_takenness()).value.decode('utf-8').split(',')[:-1]
     hist_counts = [float(x) for x in hist_str_list]
     hist_sum = sum(hist_counts)
-    hist_p = [float(x)/hist_sum for x in hist_counts]
+    if(hist_sum > 0):
+        hist_p = [float(x)/hist_sum for x in hist_counts]
+    else:
+        hist_p = [float(x) for x in hist_counts]
 
     #Aggregate for overall stats
     if hist_p_aggregate is None:
@@ -212,7 +227,7 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
 
     plt.figure(figsize=(fig_w, fig_h))
     plt.bar(positions, hist_p, color='blue', edgecolor='black')
-    plt.xlabel('Takenness')
+    plt.xlabel('Store to load dependence takenness')
     plt.ylabel('Normalised frequency')
     #plt.title('Histogram of takenness')
     positions = np.arange(len(hist_counts) +1) - 0.5
@@ -220,18 +235,19 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
     if log_scale:
         plt.yscale('log')
 
+    plt.tight_layout()
+
     try:
-        plt.savefig(f'trace_analysis/figures1024/{spec_benchmark}_mdp_takenness.png', dpi=300)
+        plt.savefig(f'trace_analysis/figures{max_val-1}/{spec_benchmark}_mdp_takenness.png', dpi=300)
     except:
         plt.show(block=fig_block)
         print("Failed to open figure path")
+    plt.close()
 
-
-        #Plot path counts
+    #Plot path counts
     pystr = ctypes.c_char_p.from_buffer(get_path_counts()).value.decode('utf-8')
     temp = pystr.split(',')[:-1]
-    #path_counts = [float(x) for x in temp][:max_val]
-    path_counts = [1]
+    path_counts = [float(x) for x in temp][:max_val]
     path_counts_sum = sum(path_counts)
     path_counts_p = [float(x)/path_counts_sum for x in path_counts]
 
@@ -251,19 +267,21 @@ for bench_idx, spec_benchmark in enumerate(spec_benchmarks):
         myfile.write(f"{benchmark_name} branch CDF: {path_counts_cdf} \n")
 
     plt.figure(figsize=(fig_w, fig_h))
-    plt.bar(positions, path_counts_p, color='blue', edgecolor='black')
-    plt.xlabel('Number of paths to load')
+    plt.bar(positions, path_counts_p, color='black', edgecolor='black')
+    plt.xlabel('Per load PC path count')
     plt.ylabel('Normalised frequency')
     plt.xticks(positions[::tick_space], labels[::tick_space])
     if log_scale:
         plt.yscale('log')
 
+    plt.tight_layout()
+
     try:
-        plt.savefig(f'trace_analysis/figures1024/{spec_benchmark}_path_dist.png', dpi=300)
+        plt.savefig(f'trace_analysis/figures{max_val-1}/{spec_benchmark}_path_dist.png', dpi=300)
     except:
         plt.show(block=fig_block)
         print("Failed to open figure path")
-
+    plt.close()
         
 #Print aggregate stats
 labels = [str(i) for i in range(0, max_val)]
@@ -271,23 +289,25 @@ positions = np.arange(max_val)
 eff_seq_dists_p_aggregate = [float(x)/eff_seq_dists_p_aggregate_sum for x in eff_seq_dists_p_aggregate]
 
 plt.figure(figsize=(fig_w, fig_h))
-plt.bar(positions, eff_seq_dists_p_aggregate, color='blue', edgecolor='black')
-plt.xlabel('Linear sequence number distance')
+plt.bar(positions, eff_seq_dists_p_aggregate, color='black', edgecolor='black')
+plt.xlabel('Commit distance')
 plt.ylabel('Normalised frequency')
 plt.xticks(positions[::tick_space], labels[::tick_space])
 if log_scale:
     plt.yscale('log')
 
+plt.tight_layout()
+
 try:
-    plt.savefig(f'trace_analysis/figures1024/aggregate_eff_seq_dist.png', dpi=300)
+    plt.savefig(f'trace_analysis/figures{max_val-1}/aggregate_eff_seq_dist.png', dpi=300)
 except:
     plt.show(block=fig_block)
     print("Failed to open figure path")
+plt.close()
 
 eff_seq_dist_mean = 0
 for i, p in enumerate(eff_seq_dists_p_aggregate):
     eff_seq_dist_mean += i * p
-
 
 eff_seq_dists_p_aggregate_cdf = [f"{i}:{sum(eff_seq_dists_p_aggregate[:i])}" for i, x in enumerate(eff_seq_dists_p_aggregate)]
 
@@ -299,36 +319,43 @@ eff_seq_dists_p_aggregate_cdf = [sum(eff_seq_dists_p_aggregate[:i]) for i, x in 
 
 plt.figure(figsize=(fig_w, fig_h))
 plt.plot(positions, eff_seq_dists_p_aggregate_cdf , color='blue')
-plt.xlabel('Branch distance')
-plt.ylabel('Cumulative normalised frequency')
+plt.xlabel('Commit distance')
+plt.ylabel('Cumulative frequency')
 plt.xticks(positions[::tick_space], labels[::tick_space])
 plt.yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0]) 
 if log_scale:
     plt.yscale('log')
 
+plt.tight_layout()
+
 try:
-    plt.savefig(f'trace_analysis/figures1024/aggregate_eff_seq_dist_cdf.png', dpi=300)
+    plt.savefig(f'trace_analysis/figures{max_val-1}/aggregate_eff_seq_dist_cdf.png', dpi=300)
 except:
     plt.show(block=fig_block)
     print("Failed to open figure path")
 
-labels = [str(i) for i in range(0, max_val)]
-positions = np.arange(max_val)
+plt.close()
+
+labels = [str(i) for i in range(0, max_val//2 +1)]
+positions = np.arange(max_val//2 +1)
 branch_dists_p_aggregate = [float(x)/branch_dists_p_aggregate_sum for x in branch_dists_p_aggregate]
 
 plt.figure(figsize=(fig_w, fig_h))
-plt.bar(positions, branch_dists_p_aggregate, color='blue', edgecolor='black')
+plt.bar(positions, branch_dists_p_aggregate, color='black', edgecolor='black')
 plt.xlabel('Branch distance')
 plt.ylabel('Normalised frequency')
 plt.xticks(positions[::tick_space], labels[::tick_space])
 if log_scale:
     plt.yscale('log')
 
+plt.tight_layout()
+
 try:
-    plt.savefig(f'trace_analysis/figures1024/aggregate_branch_dist.png', dpi=300)
+    plt.savefig(f'trace_analysis/figures{max_val-1}/aggregate_branch_dist.png', dpi=300)
 except:
     plt.show(block=fig_block)
     print("Failed to open figure path")
+plt.close()
 
 branch_dists_mean = 0
 for i, p in enumerate(branch_dists_p_aggregate):
@@ -344,7 +371,7 @@ branch_dists_p_aggregate_cdf = [sum(branch_dists_p_aggregate[:i])for i, x in enu
 plt.figure(figsize=(fig_w, fig_h))
 plt.plot(branch_dists_p_aggregate_cdf, color='blue')
 plt.xlabel('Branch distance')
-plt.ylabel('Cumulative normalised frequency')
+plt.ylabel('Cumulative frequency')
 plt.xticks(positions[::tick_space], labels[::tick_space])
 
 # Adjusting y-axis ticks
@@ -354,50 +381,59 @@ ax.yaxis.set_major_locator(MaxNLocator(5))  # Limits the number of major ticks
 if log_scale:
     plt.yscale('log')
 
+plt.tight_layout()
+
 try:
-    plt.savefig(f'trace_analysis/figures1024/aggregate_branch_dist_cdf.png', dpi=300)
+    plt.savefig(f'trace_analysis/figures{max_val-1}/aggregate_branch_dist_cdf.png', dpi=300)
 except:
     plt.show(block=fig_block)
     print("Failed to open figure path")
-
+plt.close()
 
 
 labels = [str(i/len(hist_counts)) for i in range(len(hist_counts))]
 positions = np.arange(len(hist_counts))
+hist_p_aggregate_sum = sum(hist_p_aggregate)
 hist_p_aggregate = [float(x)/hist_p_aggregate_sum for x in hist_p_aggregate]
 
 plt.figure(figsize=(fig_w, fig_h))
 plt.bar(positions, hist_p_aggregate, color='blue', edgecolor='black')
-plt.xlabel('Takenness')
-plt.ylabel('Normalised Frequency')
+plt.xlabel('Store to load dependence takenness')
+plt.ylabel('Normalised frequency')
 #plt.title('Histogram of takenness')
 plt.xticks(positions[::tick_space_hist], labels[::tick_space_hist])
 if log_scale:
     plt.yscale('log')
 
+plt.tight_layout()
+
 try:
-    plt.savefig(f'trace_analysis/figures1024/aggregate_mdp_takenness.png', dpi=300)
+    plt.savefig(f'trace_analysis/figures{max_val-1}/aggregate_mdp_takenness.png', dpi=300)
 except:
     plt.show(block=fig_block)
     print("Failed to open figure path")
+plt.close()
 
 path_p_aggregate = [float(x)/path_p_aggregate_sum for x in path_p_aggregate]
 labels = [str(i) for i in range(0, max_val)]
 positions = np.arange(max_val)
 
 plt.figure(figsize=(fig_w, fig_h))
-plt.bar(positions, path_p_aggregate, color='blue', edgecolor='black')
-plt.xlabel('Number of paths to load')
+plt.bar(positions, path_p_aggregate, color='black', edgecolor='black')
+plt.xlabel('Per load PC path count')
 plt.ylabel('Normalised frequency')
 plt.xticks(positions[::tick_space], labels[::tick_space])
 if log_scale:
     plt.yscale('log')
 
+plt.tight_layout()
+
 try:
-    plt.savefig(f'trace_analysis/figures1024/aggregate_path_dist.png', dpi=300)
+    plt.savefig(f'trace_analysis/figures{max_val-1}/aggregate_path_dist.png', dpi=300)
 except:
     plt.show(block=fig_block)
     print("Failed to open figure path")
+plt.close()
 
 #Calculate mean
 path_counts_mean = 0
@@ -413,8 +449,8 @@ path_p_aggregate_cdf = [sum(path_p_aggregate[:i])for i, x in enumerate(path_p_ag
 
 plt.figure(figsize=(fig_w, fig_h))
 plt.plot(path_p_aggregate_cdf, color='blue')
-plt.xlabel('NUmber of unique paths to load')
-plt.ylabel('Cumulative normalised frequency')
+plt.xlabel('Per load PC path count')
+plt.ylabel('Cumulative frequency')
 plt.xticks(positions[::tick_space], labels[::tick_space])
 
 # Adjusting y-axis ticks
@@ -424,11 +460,14 @@ ax.yaxis.set_major_locator(MaxNLocator(5))  # Limits the number of major ticks
 if log_scale:
     plt.yscale('log')
 
+plt.tight_layout()
+
 try:
-    plt.savefig(f'trace_analysis/figures1024/aggregate_path_cdf.png', dpi=300)
+    plt.savefig(f'trace_analysis/figures{max_val-1}/aggregate_path_cdf.png', dpi=300)
 except:
     plt.show(block=fig_block)
     print("Failed to open figure path")
+plt.close()
 
 with open("Stat.txt", "a+") as myfile:
     myfile.write(f"Aggregate, {eff_seq_dist_mean}, {branch_dists_mean}, {path_counts_mean} \n")

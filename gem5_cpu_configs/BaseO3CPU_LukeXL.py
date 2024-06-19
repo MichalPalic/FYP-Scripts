@@ -90,8 +90,8 @@ class BaseO3CPU(BaseCPU):
     forwardComSize = Param.Unsigned(5,
             "Time buffer size for forward communication")
 
-    LQEntries = Param.Unsigned(48, "Number of load queue entries")
-    SQEntries = Param.Unsigned(48, "Number of store queue entries")
+    LQEntries = Param.Unsigned(98, "Number of load queue entries")
+    SQEntries = Param.Unsigned(98, "Number of store queue entries")
     LSQDepCheckShift = Param.Unsigned(4,
             "Number of places to shift addr before check")
     LSQCheckLoads = Param.Bool(True,
@@ -100,8 +100,8 @@ class BaseO3CPU(BaseCPU):
     store_set_clear_period = Param.Unsigned(62464,
             "Number of load/store insts before the dep predictor "
             "should be invalidated")
-    LFSTSize = Param.Unsigned(192, "Last fetched store table size")
-    SSITSize = Param.Unsigned(192, "Store set ID table size")
+    LFSTSize = Param.Unsigned(256, "Last fetched store table size")
+    SSITSize = Param.Unsigned(256, "Store set ID table size")
 
     numRobs = Param.Unsigned(1, "Number of Reorder Buffers");
 

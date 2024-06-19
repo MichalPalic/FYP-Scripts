@@ -318,28 +318,28 @@ std::vector<trace_elem> trace;
                       pairCounts[elem.tuid.pc][pc_set_elem] = weight;
                 }
 
-                // //Log cache pairs
+                //Log cache pairs
 
-                // mdp_path p = mdp_path();
-                // p.branch_hist = global_branch_hist;
+                mdp_path p = mdp_path();
+                p.branch_hist = global_branch_hist;
                 
-                // for (auto branch_dist_elem : branch_dist_set){
-                //   p.path_length = branch_dist_elem;
-                //   if (pathCounts[elem.tuid.pc].contains(p))
-                //     pathCounts[elem.tuid.pc][p] += weight;
-                //   else
-                //     pathCounts[elem.tuid.pc][p] = weight;
+                for (auto branch_dist_elem : branch_dist_set){
+                  p.path_length = branch_dist_elem;
+                  if (pathCounts[elem.tuid.pc].contains(p))
+                    pathCounts[elem.tuid.pc][p] += weight;
+                  else
+                    pathCounts[elem.tuid.pc][p] = weight;
 
-                // }
+                }
 
           //Branch 
           } else if (elem.load && !elem.valid){
             global_branch_n++;
 
-            //Weird branch encoding, dep.pc stores predicted value and n_visited
-            //stores if it's a misprediction or not
-            // global_branch_hist = global_branch_hist << 1;
-            // global_branch_hist |= (elem.dep.pc ^ elem.dep.n_visited);
+            // Weird branch encoding, dep.pc stores predicted value and n_visited
+            // stores if it's a misprediction or not
+            global_branch_hist = global_branch_hist << 1;
+            global_branch_hist |= (elem.dep.pc ^ elem.dep.n_visited);
 
           } 
       }

@@ -80,19 +80,29 @@ labels.sort()
 values = [(base_dict[key] - new_dict[key])/base_dict[key] * 100 for key in labels]
 
 # Creating the bar graph
-plt.figure(figsize=(14, 10))  # Set figure size
+plt.rcParams['axes.labelsize'] = 16
+plt.rcParams['xtick.labelsize'] = 16
+plt.rcParams['ytick.labelsize'] = 16 
+
+plt.figure(figsize=(14, 6))  # Set figure size
 plt.bar(labels, values, color='blue', edgecolor='black')
 
 # Adding labels and title
-plt.xlabel('Benchmarks')
-plt.ylabel('Percentage Improvement (%)')
+#plt.xlabel('Benchmarks')
+plt.ylabel('IPC Improvement (%)')
 #plt.title('Percentage Change from Base to New Values')
 
 plt.xticks(rotation=90) 
 plt.subplots_adjust(bottom=0.2) 
 
 # Showing the plot
+plt.tight_layout()
 plt.savefig(f'trace_analysis/figures/perf_improvement.png', dpi=300)
 plt.show(block=True)
 
-print("Got here")
+# Oracle steps
+base_dict = aggregate_stat(
+                baseline_dir,
+               checkpoint_dir,
+               stat_name
+               )
