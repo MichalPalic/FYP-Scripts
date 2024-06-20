@@ -20,6 +20,7 @@
 
 //Common helper classes
 //Setup to allow TraceUID to be used as hashmap key
+//Trace UID is the speculation invariant identifier for an instruction
 struct TraceUID
 {
   uint64_t pc;
@@ -55,6 +56,8 @@ struct TraceUID
   }
 
 
+//Container for parsed line of trace
+
 struct trace_elem
 {
     bool valid;
@@ -89,6 +92,7 @@ struct trace_elem
 
 std::vector<trace_elem> trace;
 
+  //Parse trace file into array of trace elements
   void load_trace(boost::iostreams::filtering_istream& infile, uint64_t n){
       std::string line;
 
@@ -184,16 +188,22 @@ std::vector<trace_elem> trace;
   const u_int32_t branch_hist_size = 64;
   uint64_t global_branch_hist = 0;
 
-  //Thanks 
-  //https://stackoverflow.com/questions/21245139/fastest-way-to-compare-bitsets-operator-on-bitsets
-  template<std::size_t N>
-    bool operator<(const std::bitset<N>& x, const std::bitset<N>& y)
-    {
-        for (int i = N-1; i >= 0; i--) {
-            if (x[i] ^ y[i]) return y[i];
-        }
-        return false;
-    }
+  // //Thanks 
+  // //https://stackoverflow.com/questions/21245139/fastest-way-to-compare-bitsets-operator-on-bitsets
+  // template<std::size_t N>
+  //   bool operator<(const std::bitset<N>& x, const std::bitset<N>& y)
+  //   {
+  //       for (int i = N-1; i >= 0; i--) {
+  //           if (x[i] ^ y[i]) return y[i];
+  //       }
+  //       return false;
+  //   }
+
+//Treat path as single entry with comparison and hash operators to allow for
+//use with map and unordered map
+
+//A path always has the previous 64 global branch outcomes available in the
+//uint64_t but only takes the least significant path length bits into account
 
   class mdp_path {
     public:
@@ -318,8 +328,7 @@ std::vector<trace_elem> trace;
                       pairCounts[elem.tuid.pc][pc_set_elem] = weight;
                 }
 
-                //Log cache pairs
-
+                //Log path counts
                 mdp_path p = mdp_path();
                 p.branch_hist = global_branch_hist;
                 
@@ -332,7 +341,7 @@ std::vector<trace_elem> trace;
 
                 }
 
-          //Branch 
+          //Handle branches 
           } else if (elem.load && !elem.valid){
             global_branch_n++;
 
@@ -530,18 +539,16 @@ extern "C" {
       infile.push(boost::iostreams::zstd_decompressor());
       infile.push(boost::iostreams::file_source(trace_path));
 
-    //Chunk loading and processing
-    //while (infile.peek() != EOF){
+    //Chunk loading and processing 1M entries at a time
     while (!infile.eof()){
-        //printf("Back to loading\n");
         load_trace(infile, 1000000);
-        //printf("Back to traversing\n");
         traverse(weight, warmup);
         trace.clear();
     }
   }
 }
 
+//Test code for when not running as a library
 int main(){
     //Load trace from file
     printf("Running main\n");
